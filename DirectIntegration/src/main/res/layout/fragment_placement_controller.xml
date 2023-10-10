@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="150dp"
+    android:layout_marginLeft="10dp"
+    android:layout_marginTop="10dp"
+    android:layout_marginRight="10dp"
+    android:layout_marginBottom="10dp"
+    tools:context=".PlacementController">
+
+    <!-- TODO: Update blank fragment layout -->
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/type"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:height="50dp"
+            android:singleLine="true"
+            android:text="Placement Type"
+            android:textColor="#000000"
+            android:textSize="25dp" />
+
+        <TextView
+            android:id="@+id/id"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="5dp"
+            android:height="50dp"
+            android:singleLine="true"
+            android:text="Placement Id"
+            android:textColor="#000000"
+            android:textSize="25dp" />
+
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/availableBid"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Availalbe Bid"
+        android:textColor="#000000"
+        android:textSize="15dp"
+        android:translationY="30dp" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="40dp"
+        android:orientation="horizontal"
+        android:translationY="45dp">
+
+        <Button
+            android:id="@+id/bidButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="10dp"
+            android:text="Bid" />
+
+        <Button
+            android:id="@+id/loadButton"
+            android:layout_width="90dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="205dp"
+            android:text="Load" />
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="40dp"
+        android:orientation="horizontal"
+        android:translationY="80dp">
+
+        <TextView
+            android:id="@+id/bufferedBid"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:layout_weight="2"
+            android:text="Buffered Bid"
+            android:textColor="#000000"
+            android:textSize="15dp" />
+
+        <Button
+            android:id="@+id/showButton"
+            android:layout_width="90dp"
+            android:layout_height="wrap_content"
+            android:text="Show" />
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="40dp"
+        android:orientation="horizontal"
+        android:translationY="115dp">
+
+        <TextView
+            android:id="@+id/renderedBid"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:layout_weight="2"
+            android:singleLine="true"
+            android:text="Rendered Bid"
+            android:textColor="#000000"
+            android:textSize="15dp" />
+
+        <Button
+            android:id="@+id/closeButton"
+            android:layout_width="90dp"
+            android:layout_height="wrap_content"
+            android:text="Close" />
+    </LinearLayout>
+
+</FrameLayout>
