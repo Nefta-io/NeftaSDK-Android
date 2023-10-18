@@ -32,11 +32,11 @@ public class MainActivity extends AppCompatActivity {
         _plugin = NeftaPlugin.Init(getApplicationContext(),"5667525748588544");
         _plugin.OnReady = this::OnReady;
         _plugin.OnBid = this::OnBid;
-        _plugin.OnPlacementStartLoad = this::OnPlacementStartLoad;
-        _plugin.OnPlacementLoadFail = this::OnPlacementLoadFail;
-        _plugin.OnPlacementLoad = this::OnPlacementLoad;
-        _plugin.OnPlacementShow = this::OnPlacementShow;
-        _plugin.OnPlacementClose = this::OnPlacementClose;
+        _plugin.OnLoadStart = this::OnPlacementStartLoad;
+        _plugin.OnLoadFail = this::OnPlacementLoadFail;
+        _plugin.OnLoad = this::OnPlacementLoad;
+        _plugin.OnShow = this::OnPlacementShow;
+        _plugin.OnClose = this::OnPlacementClose;
         _plugin.EnableAds(true);
         _plugin.PrepareRenderer(this);
 
@@ -69,7 +69,7 @@ public class MainActivity extends AppCompatActivity {
         for (Map.Entry<Placement, PlacementController> p : _placementToControllers.entrySet()) {
             Placement placement = p.getKey();
             if (placement._renderedBid != null) {
-                _plugin.ClosePlacement(placement._id);
+                _plugin.Close(placement._id);
                 return;
             }
         }
@@ -103,7 +103,7 @@ public class MainActivity extends AppCompatActivity {
         _placementToControllers.get(placement).OnLoad();
     }
 
-    private void OnPlacementShow(Placement placement, int height) {
+    private void OnPlacementShow(Placement placement, int width, int height) {
         _placementToControllers.get(placement).OnShow();
     }
 

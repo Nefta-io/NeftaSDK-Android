@@ -59,19 +59,19 @@ public class PlacementController extends Fragment {
         _loadButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                _plugin.LoadPlacement(_placement._id);
+                _plugin.Load(_placement._id);
             }
         });
         _showButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                _plugin.ShowPlacement(_placement._id);
+                _plugin.Show(_placement._id);
             }
         });
         _closeButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                _plugin.ClosePlacement(_placement._id);
+                _plugin.Close(_placement._id);
             }
         });
 
