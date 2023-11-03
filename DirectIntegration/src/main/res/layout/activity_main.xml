@@ -10,7 +10,7 @@
     tools:context=".MainActivity">
 
     <TextView
-        android:id="@+id/textView"
+        android:id="@+id/mainTitle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center_horizontal"
@@ -18,33 +18,25 @@
         android:textAlignment="center"
         android:textColor="#000000"
         android:textSize="30dp"
-        android:translationY="100dp" />
+        android:translationY="80dp" />
 
-    <LinearLayout
+    <TextView
+        android:id="@+id/appId"
         android:layout_width="match_parent"
-        android:layout_height="48dp"
-        android:background="#FFFFFF"
-        android:baselineAligned="false"
-        android:gravity="center_horizontal"
-        android:orientation="horizontal"
-        android:translationY="140dp">
-
-        <Switch
-            android:id="@+id/autoLoadSwitch"
-            android:layout_width="wrap_content"
-            android:layout_height="match_parent"
-            android:checked="true"
-            android:text="Auto load"
-            android:textAlignment="center"
-            android:textColor="#454749"
-            android:textSize="20sp" />
-    </LinearLayout>
+        android:layout_height="wrap_content"
+        android:text="AppId"
+        android:textAlignment="center"
+        android:textColor="#000000"
+        android:textSize="14dp"
+        android:translationY="112dp" />
 
     <LinearLayout
         android:id="@+id/placementContainer"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:translationY="180dp" />
+        android:translationY="120dp" >
+
+    </LinearLayout>
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

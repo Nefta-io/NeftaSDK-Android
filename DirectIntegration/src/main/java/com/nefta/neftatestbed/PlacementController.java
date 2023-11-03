@@ -27,13 +27,11 @@ public class PlacementController extends Fragment {
     private Button _showButton;
     private TextView _renderedBid;
     private Button _closeButton;
-    private boolean _isAutoLoad;
 
-    public PlacementController(Activity activity, NeftaPlugin plugin, Placement placement, boolean isAutoLoad) {
+    public PlacementController(Activity activity, NeftaPlugin plugin, Placement placement) {
         _activity = activity;
         _plugin = plugin;
         _placement = placement;
-        _isAutoLoad = isAutoLoad;
     }
 
     @Override
@@ -53,7 +51,8 @@ public class PlacementController extends Fragment {
         _bidButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                _plugin.Bid(_placement._id, _isAutoLoad);
+                _plugin.Bid(_placement._id);
+                SyncUi();
             }
         });
         _loadButton.setOnClickListener(new View.OnClickListener() {
@@ -78,10 +77,6 @@ public class PlacementController extends Fragment {
         SyncUi();
 
         return view;
-    }
-
-    public void SetAutoLoad(boolean isAutoLoad) {
-        _isAutoLoad = isAutoLoad;
     }
 
     public void OnBid() {
@@ -114,8 +109,9 @@ public class PlacementController extends Fragment {
             bid += _placement._availableBid._id + " (" + _placement._availableBid._price + ")";
         }
         _availableBid.setText(bid);
-        _bidButton.setEnabled(!_placement._isBidding);
-        _loadButton.setText(_placement._isLoading ? "Loading" : "Load");
+        _bidButton.setText(_placement.IsBidding() ? "Bidding" : "Bid");
+        _bidButton.setEnabled(!_placement.IsBidding());
+        _loadButton.setText(_placement.IsLoading() ? "Loading" : "Load");
         _loadButton.setEnabled(_placement.CanLoad());
 
         bid = "Buffer Bid: ";

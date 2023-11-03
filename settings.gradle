@@ -19,5 +19,4 @@ dependencyResolutionManagement {
 rootProject.name = "NeftaTestBed"
 include ':DirectIntegration'
 include ':ISIntegration'
-include ':NeftaPlugin'
-include ':NeftaCustomAdapter'
+include ':MaxIntegration'

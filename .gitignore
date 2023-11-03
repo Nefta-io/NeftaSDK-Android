@@ -5,6 +5,9 @@
 .externalNativeBuild
 .cxx
 local.properties
+.safedk/
 
 /DirectIntegration/build
 /ISIntegration/build
+/MaxIntegration/build
+/MaxIntegration/.safedk/
