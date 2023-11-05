@@ -90,8 +90,6 @@ public class MainActivity extends AppCompatActivity {
 
     private void OnBid(Placement.Types type, Placement placement, BidResponse bidResponse) {
         _placementToControllers.get(placement).OnBid();
-
-        _plugin.Events.AddProgressionEvent(NeftaEvents.ProgressionStatus.Completed, NeftaEvents.ProgressionType.Achievement, NeftaEvents.ProgressionSource.Boss);
     }
 
     private void OnStartLoad(Placement.Types type, Placement placement) {
