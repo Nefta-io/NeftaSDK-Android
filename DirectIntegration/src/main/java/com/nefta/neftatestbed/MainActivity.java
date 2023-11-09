@@ -64,14 +64,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void onBackPressed() {
-        for (Map.Entry<Placement, PlacementController> p : _placementToControllers.entrySet()) {
-            Placement placement = p.getKey();
-            if (placement._renderedBid != null) {
-                _plugin.Close(placement._id);
-                return;
-            }
-        }
-        super.onBackPressed();
+        _plugin.Close();
     }
 
     private void OnReady(HashMap<String, Placement> placements) {
