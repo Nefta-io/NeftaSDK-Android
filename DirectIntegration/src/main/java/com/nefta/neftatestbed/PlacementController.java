@@ -9,6 +9,8 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.CheckBox;
+import android.widget.CompoundButton;
 import android.widget.TextView;
 
 import com.nefta.sdk.NeftaPlugin;
@@ -20,6 +22,7 @@ public class PlacementController extends Fragment {
     private NeftaPlugin _plugin;
     private Placement _placement;
 
+    private CheckBox _enableBanner;
     private TextView _availableBid;
     private Button _bidButton;
     private Button _loadButton;
@@ -39,6 +42,8 @@ public class PlacementController extends Fragment {
         View view = inflater.inflate(R.layout.fragment_placement_controller, container, false);
         ((TextView)view.findViewById(R.id.id)).setText(_placement._id);
         ((TextView)view.findViewById(R.id.type)).setText(_placement._type.toString());
+
+        _enableBanner = ((CheckBox)view.findViewById(R.id.enableBanner));
 
         _availableBid = (TextView) view.findViewById(R.id.availableBid);
         _bidButton = (Button)view.findViewById(R.id.bidButton);
@@ -71,6 +76,14 @@ public class PlacementController extends Fragment {
             @Override
             public void onClick(View view) {
                 _plugin.Close(_placement._id);
+            }
+        });
+
+        _enableBanner.setVisibility(_placement._type == Placement.Types.Banner ? View.VISIBLE : View.GONE);
+        _enableBanner.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
+                _plugin.EnableBanner(_placement._id, b);
             }
         });
 

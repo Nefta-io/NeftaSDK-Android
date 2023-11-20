@@ -81,27 +81,27 @@ public class MainActivity extends AppCompatActivity {
         ft.commit();
     }
 
-    private void OnBid(Placement.Types type, Placement placement, BidResponse bidResponse) {
+    private void OnBid(Placement placement, BidResponse bidResponse) {
         _placementToControllers.get(placement).OnBid();
     }
 
-    private void OnStartLoad(Placement.Types type, Placement placement) {
+    private void OnStartLoad(Placement placement) {
         _placementToControllers.get(placement).OnStartLoad();
     }
 
-    private void OnLoadFail(Placement.Types type, Placement placement, String error) {
+    private void OnLoadFail(Placement placement, String error) {
         _placementToControllers.get(placement).OnLoadFail();
     }
 
-    private void OnLoad(Placement.Types type, Placement placement) {
+    private void OnLoad(Placement placement) {
         _placementToControllers.get(placement).OnLoad();
     }
 
-    private void OnShow(Placement.Types type, Placement placement, int width, int height) {
+    private void OnShow(Placement placement, int width, int height) {
         _placementToControllers.get(placement).OnShow();
     }
 
-    private void OnClose(Placement.Types type, Placement placement) {
+    private void OnClose(Placement placement) {
         _placementToControllers.get(placement).OnClose();
     }
 
