@@ -2,12 +2,10 @@ buildscript {
     repositories {
         google()
         jcenter()
-        maven { url 'https://artifacts.applovin.com/android' }
 
     }
     dependencies {
         classpath 'com.android.tools.build:gradle:4.2.0'
-        classpath "com.applovin.quality:AppLovinQualityServiceGradlePlugin:+"
     }
 }
 
