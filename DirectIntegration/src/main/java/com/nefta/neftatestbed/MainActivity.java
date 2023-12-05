@@ -51,18 +51,6 @@ public class MainActivity extends AppCompatActivity {
         ((TextView) findViewById(R.id.appId)).setText(appIdText);
     }
 
-    protected void onResume() {
-        super.onResume();
-
-        _plugin.OnResume();
-    }
-
-    protected void onPause() {
-        super.onPause();
-
-        _plugin.OnPause();
-    }
-
     public void onBackPressed() {
         _plugin.Close();
     }
