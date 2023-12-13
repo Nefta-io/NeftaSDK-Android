@@ -9,7 +9,6 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.FragmentTransaction;
 
 import com.nefta.sdk.BidResponse;
-import com.nefta.sdk.NeftaEvents;
 import com.nefta.sdk.NeftaPlugin;
 import com.nefta.neftatestbed.databinding.ActivityMainBinding;
 import com.nefta.sdk.Placement;
@@ -49,6 +48,20 @@ public class MainActivity extends AppCompatActivity {
             appIdText = "AppId: " + appId;
         }
         ((TextView) findViewById(R.id.appId)).setText(appIdText);
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+
+        _plugin.OnResume();
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+
+        _plugin.OnPause();
     }
 
     public void onBackPressed() {
