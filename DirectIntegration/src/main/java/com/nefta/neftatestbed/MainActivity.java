@@ -27,7 +27,7 @@ public class MainActivity extends AppCompatActivity {
         ActivityMainBinding binding = ActivityMainBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
-        String appId = "5070114386870272";
+        String appId = "5630785994358784";
         _plugin = NeftaPlugin.Init(getApplicationContext(), appId);
         _plugin.OnReady = this::OnReady;
         _plugin.OnBid = this::OnBid;
