@@ -1,6 +1,5 @@
 package com.nefta.neftatestbed;
 
-import android.app.Activity;
 import android.os.Bundle;
 
 import androidx.fragment.app.Fragment;
@@ -17,11 +16,8 @@ import com.nefta.sdk.NeftaPlugin;
 import com.nefta.sdk.Placement;
 
 public class PlacementController extends Fragment {
-
-    private Activity _activity;
     private NeftaPlugin _plugin;
     private Placement _placement;
-
     private CheckBox _enableBanner;
     private TextView _availableBid;
     private Button _bidButton;
@@ -31,8 +27,11 @@ public class PlacementController extends Fragment {
     private TextView _renderedBid;
     private Button _closeButton;
 
-    public PlacementController(Activity activity, NeftaPlugin plugin, Placement placement) {
-        _activity = activity;
+    public PlacementController() {
+
+    }
+
+    public void Init(NeftaPlugin plugin, Placement placement) {
         _plugin = plugin;
         _placement = placement;
     }
