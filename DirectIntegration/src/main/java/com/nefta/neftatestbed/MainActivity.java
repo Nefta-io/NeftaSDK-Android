@@ -43,8 +43,8 @@ public class MainActivity extends AppCompatActivity {
 
     private String _logDirectory;
     private ArrayList<String> _last3LogNames;
-    private DateTimeFormatter _logFormatter;
-    private FileOutputStream _logStream;
+    private static DateTimeFormatter _logFormatter;
+    private static FileOutputStream _logStream;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -82,7 +82,7 @@ public class MainActivity extends AppCompatActivity {
             _logFormatter = DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:ss");
 
             _last3LogNames.add(logName);
-            NeftaPlugin.OnLog = this::Log;
+            NeftaPlugin.OnLog = MainActivity::Log;
 
             logs = "";
             for (int i = 0; i < _last3LogNames.size(); i++) {
@@ -220,7 +220,7 @@ public class MainActivity extends AppCompatActivity {
         _placementToControllers.get(placement).OnClose();
     }
 
-    private void Log(String log) {
+    private static void Log(String log) {
         try {
             _logStream.write((_logFormatter.format(LocalDateTime.now()) + " " + log + "\n").getBytes(StandardCharsets.UTF_8));
         } catch (Exception e) {
@@ -244,5 +244,15 @@ public class MainActivity extends AppCompatActivity {
         shareIntent.putParcelableArrayListExtra(Intent.EXTRA_STREAM, uris);
         shareIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
         startActivity(Intent.createChooser(shareIntent, "Send..."));
+    }
+
+    private static class ExceptionHandler implements Thread.UncaughtExceptionHandler {
+        @Override
+        public void uncaughtException(Thread thread, Throwable throwable) {
+            Log("EXC t:" + thread.getName() + ", " + throwable.getMessage());
+
+            android.os.Process.killProcess(android.os.Process.myPid());
+            System.exit(1);
+        }
     }
 }
