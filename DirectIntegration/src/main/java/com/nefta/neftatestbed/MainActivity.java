@@ -97,6 +97,7 @@ public class MainActivity extends AppCompatActivity {
         } catch (Exception e) {
 
         }
+        Thread.setDefaultUncaughtExceptionHandler(new ExceptionHandler());
 
         String appId = "5643649824063488";
         _plugin = NeftaPlugin.Init(_context, appId);
@@ -149,6 +150,8 @@ public class MainActivity extends AppCompatActivity {
                 clipboard.setPrimaryClip(clip);
 
                 Toast.makeText(_context, R.string.nuid_toast, Toast.LENGTH_SHORT).show();
+
+                NeftaPlugin.Events.AddReceiveEvent(NeftaEvents.ResourceCategory.CoreItem, NeftaEvents.ReceiveMethod.Other);
             }
         });
 
