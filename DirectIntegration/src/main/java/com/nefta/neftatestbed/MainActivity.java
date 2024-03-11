@@ -145,11 +145,7 @@ public class MainActivity extends AppCompatActivity {
         _nuidText.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                ClipboardManager clipboard = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
-                ClipData clip = ClipData.newPlainText("nuid", _nuidText.getText());
-                clipboard.setPrimaryClip(clip);
-
-                Toast.makeText(_context, R.string.nuid_toast, Toast.LENGTH_SHORT).show();
+                _plugin.ShowNuid();
 
                 NeftaPlugin.Events.AddReceiveEvent(NeftaEvents.ResourceCategory.CoreItem, NeftaEvents.ReceiveMethod.Other);
             }
