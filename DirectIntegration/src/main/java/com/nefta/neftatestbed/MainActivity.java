@@ -145,7 +145,7 @@ public class MainActivity extends AppCompatActivity {
         _nuidText.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                _plugin.ShowNuid();
+                _plugin.GetNuid(true);
 
                 NeftaPlugin.Events.AddReceiveEvent(NeftaEvents.ResourceCategory.CoreItem, NeftaEvents.ReceiveMethod.Other);
             }
@@ -173,13 +173,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void OnReady(HashMap<String, Placement> placements) {
-        String userString = _plugin.GetToolboxUser();
-        try {
-            JSONObject user = new JSONObject(userString);
-            _nuidText.setText(user.getString("user_id"));
-        } catch (JSONException e) {
-            Log("Error parsing toolbox user: " + e.getMessage());
-        }
+        _nuidText.setText(_plugin.GetNuid(false));
 
         _placementToControllers.clear();
         ((LinearLayout)findViewById(R.id.placementContainer)).removeAllViews();
