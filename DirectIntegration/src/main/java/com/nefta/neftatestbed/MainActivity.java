@@ -151,7 +151,8 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        NeftaPlugin.Events.AddProgressionEvent(NeftaEvents.ProgressionStatus.Complete, NeftaEvents.ProgressionType.Task, NeftaEvents.ProgressionSource.OptionalContent);
+        NeftaPlugin.Events.AddProgressionEvent(NeftaEvents.ProgressionStatus.Start, NeftaEvents.ProgressionType.PlayerLevel, NeftaEvents.ProgressionSource.Other);
+        NeftaPlugin.Events.AddSpendEvent(NeftaEvents.ResourceCategory.SoftCurrency, NeftaEvents.SpendMethod.Other);
     }
 
     @Override
