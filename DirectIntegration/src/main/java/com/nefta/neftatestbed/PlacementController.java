@@ -1,4 +1,4 @@
-package com.nefta.neftatestbed;
+package com.nefta.testbed;
 
 import android.os.Bundle;
 

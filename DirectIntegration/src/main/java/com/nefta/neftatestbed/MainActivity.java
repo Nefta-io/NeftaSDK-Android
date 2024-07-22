@@ -1,4 +1,4 @@
-package com.nefta.neftatestbed;
+package com.nefta.testbed;
 
 import android.content.ClipData;
 import android.content.ClipboardManager;
@@ -17,14 +17,12 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.FileProvider;
 import androidx.fragment.app.FragmentTransaction;
 
+import com.google.android.material.textfield.TextInputEditText;
 import com.nefta.sdk.BidResponse;
 import com.nefta.sdk.NeftaEvents;
 import com.nefta.sdk.NeftaPlugin;
-import com.nefta.neftatestbed.databinding.ActivityMainBinding;
+import com.nefta.testbed.databinding.ActivityMainBinding;
 import com.nefta.sdk.Placement;
-
-import org.json.JSONException;
-import org.json.JSONObject;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -36,15 +34,20 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class MainActivity extends AppCompatActivity {
+    private static final String _logsKey = "logs";
+    private static final String _overrideUrlKey = "overrideUrl";
+
     private Context _context;
     private NeftaPlugin _plugin;
     private TextView _nuidText;
+    private TextInputEditText _overrideUrl;
     private HashMap<Placement, PlacementController> _placementToControllers;
 
     private String _logDirectory;
     private ArrayList<String> _last3LogNames;
     private static DateTimeFormatter _logFormatter;
     private static FileOutputStream _logStream;
+    private SharedPreferences _preferences;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -61,11 +64,11 @@ public class MainActivity extends AppCompatActivity {
             eventsDirectory.mkdir();
         }
 
+        _preferences = _context.getSharedPreferences("DirectIntegration", Context.MODE_PRIVATE);
         try {
             _last3LogNames = new ArrayList<>();
 
-            SharedPreferences preferences = _context.getSharedPreferences("DirectIntegration", Context.MODE_PRIVATE);
-            String logs = preferences.getString("logs", null);
+            String logs = _preferences.getString(_logsKey, null);
             if (logs != null && logs.length() > 0) {
                 String[] logArray = logs.split(",");
                 int i = logArray.length - 2;
@@ -82,7 +85,7 @@ public class MainActivity extends AppCompatActivity {
             _logFormatter = DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:ss");
 
             _last3LogNames.add(logName);
-            NeftaPlugin.OnLog = MainActivity::Log;
+            //NeftaPlugin.OnLog = MainActivity::Log;
 
             logs = "";
             for (int i = 0; i < _last3LogNames.size(); i++) {
@@ -91,16 +94,26 @@ public class MainActivity extends AppCompatActivity {
                 }
                 logs += _last3LogNames.get(i);
             }
-            SharedPreferences.Editor editor = preferences.edit();
-            editor.putString("logs", logs);
+            SharedPreferences.Editor editor = _preferences.edit();
+            editor.putString(_logsKey, logs);
             editor.apply();
         } catch (Exception e) {
 
         }
         Thread.setDefaultUncaughtExceptionHandler(new ExceptionHandler());
 
+        String overrideUrl = _preferences.getString(_overrideUrlKey, null);
+        Intent intent = getIntent();
+        if (intent != null && intent.getExtras() != null) {
+            NeftaPlugin._instance = null;
+            overrideUrl = intent.getStringExtra("override");
+        }
+
         String appId = "5643649824063488";
         _plugin = NeftaPlugin.Init(_context, appId);
+        if (overrideUrl != null) {
+            _plugin.SetOverride(overrideUrl);
+        }
         _plugin.OnReady = this::OnReady;
         _plugin.OnBid = this::OnBid;
         _plugin.OnLoadStart = this::OnStartLoad;
@@ -111,14 +124,20 @@ public class MainActivity extends AppCompatActivity {
         _plugin.EnableAds(true);
         _plugin.PrepareRenderer(this);
 
+        _plugin.SetCustomParameter("5679149674921984", "screen", "home");
+        _plugin.SetCustomParameter("5679149674921984", "bidfloor", 0.5);
+
         _placementToControllers = new HashMap<>();
 
-        String appIdText;
-        if (appId == null || appId.length() == 0) {
-            appIdText = "Demo mode (appId not set)";
-        } else {
-            appIdText = "AppId: " + appId;
-        }
+        TextView titleTextView = findViewById(R.id.mainTitle);
+        titleTextView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                findViewById(R.id.options).setVisibility(View.VISIBLE);
+            }
+        });
+
+        String appIdText= "AppId: " + appId;
         TextView appIdTextView = findViewById(R.id.appId);
         appIdTextView.setText(appIdText);
         appIdTextView.setOnClickListener(new View.OnClickListener() {
@@ -132,9 +151,7 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-
-        TextView titleTextView = findViewById(R.id.mainTitle);
-        titleTextView.setOnClickListener(new View.OnClickListener() {
+        findViewById(R.id.logs).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 SendLogs();
@@ -151,8 +168,30 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        NeftaPlugin.Events.AddProgressionEvent(NeftaEvents.ProgressionStatus.Start, NeftaEvents.ProgressionType.PlayerLevel, NeftaEvents.ProgressionSource.Other);
-        NeftaPlugin.Events.AddSpendEvent(NeftaEvents.ResourceCategory.SoftCurrency, NeftaEvents.SpendMethod.Other);
+        _overrideUrl = findViewById(R.id.overrideUrl);
+        if (_overrideUrl != null) {
+            _overrideUrl.setText(overrideUrl);
+        }
+        findViewById(R.id.override).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                SharedPreferences.Editor editor = _preferences.edit();
+                editor.putString(_overrideUrlKey, _overrideUrl.getText().toString());
+                editor.commit();
+
+                finish();
+                System.exit(0);
+            }
+        });
+
+        findViewById(R.id.close).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                findViewById(R.id.options).setVisibility(View.GONE);
+            }
+        });
+
+        NeftaPlugin.Events.AddReceiveEvent(NeftaEvents.ResourceCategory.CoreItem, NeftaEvents.ReceiveMethod.Other);
     }
 
     @Override
@@ -202,11 +241,11 @@ public class MainActivity extends AppCompatActivity {
         _placementToControllers.get(placement).OnLoadFail();
     }
 
-    private void OnLoad(Placement placement) {
+    private void OnLoad(Placement placement, int width, int height) {
         _placementToControllers.get(placement).OnLoad();
     }
 
-    private void OnShow(Placement placement, int width, int height) {
+    private void OnShow(Placement placement) {
         _placementToControllers.get(placement).OnShow();
     }
 
@@ -231,7 +270,7 @@ public class MainActivity extends AppCompatActivity {
         ArrayList<Uri> uris = new ArrayList<Uri>();
         for (String logName : _last3LogNames) {
             File file = new File( _logDirectory + "/" + logName);
-            Uri contentUri = FileProvider.getUriForFile(_context, "com.nefta.neftatestbed.provider", file);
+            Uri contentUri = FileProvider.getUriForFile(_context, "com.nefta.testbed.provider", file);
             uris.add(contentUri);
         }
 
