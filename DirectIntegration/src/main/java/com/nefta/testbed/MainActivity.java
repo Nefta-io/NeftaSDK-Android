@@ -37,7 +37,15 @@ public class MainActivity extends AppCompatActivity {
 
         Intent intent = getIntent();
         if (intent != null && intent.getExtras() != null) {
-            _plugin.SetOverride(intent.getStringExtra("override"));
+            String root = intent.getStringExtra("override");
+            String dmRoot = intent.getStringExtra("dmIp");
+            String serial = intent.getStringExtra("serial");
+            _plugin.SetOverride(root);
+
+            DebugServer debugServer = new DebugServer(dmRoot, serial);
+            NeftaPlugin.OnLog = (String log) -> {
+                debugServer.send("log", log);
+            };
         }
 
         _plugin.OnReady = this::OnReady;
@@ -50,9 +58,9 @@ public class MainActivity extends AppCompatActivity {
         _plugin.EnableAds(true);
         _plugin.PrepareRenderer(this);
 
-        _plugin.SetCustomParameter("5679149674921984", "screen", "home");
-        _plugin.SetCustomParameter("5679149674921984", "bidfloor", 0.5);
-        
+        _plugin.SetFloorPrice("1",0.5f);
+        _plugin.SetCustomParameter("1","applovin-max", "{\"bidfloor\":0.5}");
+
         _placementToControllers = new HashMap<>();
 
         NeftaPlugin.Events.AddReceiveEvent(NeftaEvents.ResourceCategory.CoreItem, NeftaEvents.ReceiveMethod.Other);
