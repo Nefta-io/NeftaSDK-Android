@@ -44,7 +44,7 @@ dependencies {
     implementation 'androidx.navigation:navigation-fragment:2.5.2'
     implementation 'androidx.navigation:navigation-ui:2.5.2'
 
-    implementation files('libs/NeftaPlugin-debug.aar')
+implementation files('libs/NeftaPlugin-debug.aar')
 
     androidTestImplementation 'junit:junit:4.13.2'
     androidTestImplementation "androidx.test:runner:1.6.1"
@@ -55,3 +55,12 @@ dependencies {
     androidTestImplementation 'org.jetbrains.kotlinx:kotlinx-serialization-json:1.2.2'
     androidTestImplementation 'androidx.test.uiautomator:uiautomator:2.3.0'
 }
+
+
+
+
+
+
+
+
+
