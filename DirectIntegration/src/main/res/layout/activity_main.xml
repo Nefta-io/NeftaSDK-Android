@@ -9,7 +9,7 @@
     android:fitsSystemWindows="true"
     tools:context=".MainActivity">
 
-    <View
+    <FrameLayout
         android:id="@+id/bannerView"
         android:layout_width="match_parent"
         android:layout_height="52dp"

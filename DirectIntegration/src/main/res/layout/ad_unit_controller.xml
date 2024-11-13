@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    tools:context=".AdUnitController">
+
+    <LinearLayout
+        android:id="@+id/info"
+        android:layout_width="match_parent"
+        android:layout_height="30dp"
+        android:layout_weight="1"
+        android:orientation="horizontal"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <TextView
+            android:id="@+id/adUnitId"
+            android:layout_width="0dp"
+            android:layout_height="30dp"
+            android:layout_weight="1"
+            android:singleLine="true"
+            android:text="Id"
+            android:textColor="#000000"
+            android:textSize="20sp" />
+
+        <TextView
+            android:id="@+id/creativeId"
+            android:layout_width="0dp"
+            android:layout_height="30dp"
+            android:layout_weight="1"
+            android:width="0dp"
+            android:singleLine="false"
+            android:text="Creative Id"
+            android:textColor="#000000"
+            android:textSize="20sp" />
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/control"
+        android:layout_width="match_parent"
+        android:layout_height="40dp"
+        android:orientation="horizontal"
+        app:layout_constraintTop_toTopOf="@id/info">
+
+        <Button
+            android:id="@+id/bidButton"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Bid"
+            android:textSize="16sp" />
+
+        <Button
+            android:id="@+id/loadButton"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Load"
+            android:textSize="16sp" />
+
+        <Button
+            android:id="@+id/showButton"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Show"
+            android:textSize="16sp" />
+
+        <Button
+            android:id="@+id/destroyButton"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Close"
+            android:textSize="16sp" />
+
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/status"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:layout_weight="2"
+        android:singleLine="false"
+        android:text="Status"
+        android:textColor="#000000"
+        android:textSize="16sp"
+        app:layout_constraintTop_toTopOf="@id/control" />
+</LinearLayout>
