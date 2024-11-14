@@ -1,21 +1,17 @@
 plugins {
     id 'com.android.application'
 }
-
 android {
     namespace 'com.nefta.direct'
     compileSdk 34
-
     defaultConfig {
         applicationId "com.nefta.direct"
         minSdk 26
         targetSdk 33
-        versionCode 34
+        versionCode 79
         versionName "4.0.0"
-
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
-
     buildTypes {
         release {
             minifyEnabled false
@@ -27,71 +23,13 @@ android {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
     }
-
     buildFeatures {
         viewBinding true
     }
 }
-
 dependencies {
     implementation 'androidx.appcompat:appcompat:1.6.1'
     implementation 'com.google.android.material:material:1.9.0'
     implementation 'androidx.constraintlayout:constraintlayout:2.1.3'
-
-    implementation files('libs/NeftaPlugin-debug.aar')
-
-    androidTestImplementation 'junit:junit:4.13.2'
-    androidTestImplementation "androidx.test:runner:1.6.1"
-    androidTestImplementation "androidx.test.ext:junit:1.2.1"
-    androidTestImplementation "androidx.test:rules:1.6.1"
-    androidTestImplementation "androidx.test.espresso:espresso-core:3.6.1"
-    androidTestImplementation 'com.squareup.okhttp3:mockwebserver:4.9.1'
-    androidTestImplementation 'org.jetbrains.kotlinx:kotlinx-serialization-json:1.2.2'
-    androidTestImplementation 'androidx.test.uiautomator:uiautomator:2.3.0'
+    implementation files('libs/NeftaPlugin-release.aar')
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

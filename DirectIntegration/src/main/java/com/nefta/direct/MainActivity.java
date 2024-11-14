@@ -46,9 +46,9 @@ public class MainActivity extends AppCompatActivity {
             String serial = intent.getStringExtra("serial");
             if (dmIp != null && dmIp.length() > 2) {
                 DebugServer debugServer = new DebugServer(dmIp, serial);
-                NeftaPlugin.OnLog = (String log) -> {
-                    debugServer.send("log " + log);
-                };
+                //NeftaPlugin.OnLog = (String log) -> {
+                //    debugServer.send("log " + log);
+                //};
             }
         }
 
