@@ -1,5 +1,9 @@
 package com.nefta.direct;
 
+import android.content.Context;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Looper;
@@ -16,304 +20,384 @@ import com.nefta.sdk.Placement;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import java.io.BufferedInputStream;
-import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
-import java.net.Socket;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
+import java.net.InetAddress;
+import java.net.NetworkInterface;
+import java.nio.charset.StandardCharsets;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.List;
 import java.util.Map;
-import java.util.Timer;
-import java.util.TimerTask;
 
 public class DebugServer {
-    private final String TAG = "DebugServer";
-    private final int _port = 12012;
+    private final String TAG = "DS";
+    private final int _broadcastPort = 12010;
 
-    private String _ip;
-    private Socket _socket;
-    private PrintWriter _out;
-    private BufferedInputStream _in;
-    private String _serial;
-    private Handler mainHandler;
-    private HandlerThread backgroundThread;
-    private Handler backgroundHandler;
+    private Context _context;
+    private String _name;
+    private String _version;
+    private final Handler _mainHandler;
+    private final HandlerThread _backgroundThread;
+    private final Handler _backgroundHandler;
+    private Thread _broadcastThread;
+    private InetAddress _broadcastAddress;
+    private DatagramSocket _broadcastSocket;
+    private Runnable _broadcastRunnable;
+    private final List<String> _logLines;
 
-    public DebugServer(String ip, String serial) {
-        _ip = ip;
-        _serial = serial;
+    public DebugServer(Context context) {
+        _context = context;
+        _mainHandler = new Handler(Looper.getMainLooper());
 
-        mainHandler = new Handler(Looper.getMainLooper());
+        _backgroundThread = new HandlerThread("NetworkThread");
+        _backgroundThread.start();
+        _backgroundHandler = new Handler(_backgroundThread.getLooper());
 
-        backgroundThread = new HandlerThread("NetworkThread");
-        backgroundThread.start();
-        backgroundHandler = new Handler(backgroundThread.getLooper());
+        _name = Build.MANUFACTURER + " " + Build.MODEL;
 
-        startServer();
-    }
-
-    public void restartServer() {
+        int buildNumber = 0;
         try {
-            if (_in != null) {
-                _in.close();
-            }
-            if (_out != null) {
-                _out.close();
-            }
-            if (_socket != null) {
-                _socket.close();
-            }
-            System.out.println("Server stopped");
-        } catch (Exception e) {
-            e.printStackTrace();
+            PackageManager pm = context.getPackageManager();
+            PackageInfo packageInfo = pm.getPackageInfo(context.getPackageName(), 0);
+            buildNumber = packageInfo.versionCode;
+        } catch (Exception ignored) {
+
         }
 
-        new Timer().schedule(new TimerTask() {
+        _version = NeftaPlugin._instance._info._bundleVersion + "." + buildNumber;
+        _logLines = new ArrayList<>();
+
+        NeftaPlugin.OnLog = (String log) -> {
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS");
+            LocalDateTime now = LocalDateTime.now();
+            _logLines.add(now.format(formatter) +" "+ log);
+        };
+
+        startBroadcastServer();
+    }
+
+    private void startBroadcastServer() {
+        _broadcastRunnable = new Runnable() {
             @Override
             public void run() {
-                startServer();
+                SendState(_broadcastAddress, _broadcastPort, "master");
+                _backgroundHandler.postDelayed(this, 5000);
             }
-        }, 5000);
-    }
+        };
 
-    public void send(String message) {
-        if (_out == null) {
-            return;
+        try {
+            _broadcastSocket = new DatagramSocket();
+            _broadcastSocket.setBroadcast(true);
+            String ip = GetBroadcastIp();
+            _broadcastAddress = InetAddress.getByName(ip);
+            Log.i(TAG, "Broadcast server started: " + ip +":"+ _broadcastSocket.getLocalPort());
+            _backgroundHandler.post(_broadcastRunnable);
+        } catch (Exception e) {
+            Log.i(TAG, "Exc: " + e.getMessage());
         }
 
-        final String data = _serial + " " + message;
-        if (Looper.getMainLooper().isCurrentThread()) {
-            backgroundHandler.post(() -> sendInternal(data));
-        } else {
-            sendInternal(data);
+        _broadcastThread = new Thread(() -> {
+            byte[] buffer = new byte[10240];
+
+            while (_broadcastThread != null) {
+                DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
+                try {
+                    _broadcastSocket.receive(packet);
+                } catch (Exception e) {
+                    Log.i(TAG, "Exc: "+ e.getMessage());
+                }
+                String message = new String(packet.getData(), 0, packet.getLength());
+
+                InetAddress address = packet.getAddress();
+                int port = packet.getPort();
+
+                Log.i(TAG, "Received broadcast: "+ message);
+
+                String[] segments = message.split("\\|");
+                String sourceName = segments[0];
+                if (_name.equals(sourceName)) {
+                    continue;
+                }
+                String control = segments[3];
+                String pId;
+                String aId;
+                int aIdH;
+                switch (control) {
+                    case "get_logs":
+                        int line = Integer.parseInt(segments[4]);
+                        for (int i = line; i < _logLines.size(); i++) {
+                            SendUdp(address, port, sourceName, "log|"+ i +"|"+ _logLines.get(i));
+                        }
+                        break;
+                    case "set_time_offset":
+                        String offsetString = segments[4];
+                        NeftaPlugin.SetDebugTime(Long.parseLong(offsetString));
+                        SendUdp(address, port, sourceName, "return|set_time_offset");
+                        break;
+                    case "state":
+                        SendState(address, port, sourceName);
+                        break;
+                    case "create":
+                        pId = segments[4];
+                        aId = null;
+                        for (Map.Entry<String, Placement> p : NeftaPlugin._instance._placements.entrySet()) {
+                            if (p.getKey().equals(pId)) {
+                                Placement placement = p.getValue();
+                                if (placement._type == Placement.Types.Banner) {
+                                    NBanner banner = new NBanner(pId, NBanner.Position.TOP);
+                                    aId = Integer.toString(banner.hashCode());
+                                } else if (placement._type == Placement.Types.Interstitial) {
+                                    NInterstitial interstitial = new NInterstitial(pId);
+                                    aId = Integer.toString(interstitial.hashCode());
+                                } else if (placement._type == Placement.Types.Rewarded) {
+                                    NRewarded rewarded = new NRewarded(pId);
+                                    aId = Integer.toString(rewarded.hashCode());
+                                }
+                            }
+                        }
+                        SendUdp(address, port, sourceName, "return|create|" + aId);
+                        break;
+                    case "partial_bid":
+                        aId = segments[4];
+                        aIdH = Integer.parseInt(aId);
+                        String bidResponse = null;
+                        for (NAd ad : NeftaPlugin._instance._ads) {
+                            if (ad.hashCode() == aIdH) {
+                                bidResponse = ad.GetPartialBidRequest().toString();
+                                break;
+                            }
+                        }
+                        SendUdp(address, port, sourceName, "return|partial_bid|" + aId + "|" + bidResponse);
+                        break;
+                    case "bid":
+                        aId = segments[4];
+                        aIdH = Integer.parseInt(aId);
+                        for (NAd ad : NeftaPlugin._instance._ads) {
+                            if (ad.hashCode() == aIdH) {
+                                ad.Bid();
+                            }
+                        }
+                        SendUdp(address, port, sourceName, "return|bid " + aId);
+                        break;
+                    case "custom_load":
+                        aId = segments[4];
+                        aIdH = Integer.parseInt(aId);
+                        String bid = segments[5];
+                        for (NAd ad : NeftaPlugin._instance._ads) {
+                            if (ad.hashCode() == aIdH) {
+                                ad.LoadWithBidResponse(bid);
+                            }
+                        }
+                        SendUdp(address, port, sourceName,"return|custom_load|" + aId);
+                        break;
+                    case "load":
+                        aId = segments[4];
+                        aIdH = Integer.parseInt(aId);
+                        for (NAd ad : NeftaPlugin._instance._ads) {
+                            if (ad.hashCode() == aIdH) {
+                                ad.Load();
+                            }
+                        }
+                        SendUdp(address, port, sourceName, "return|load " + aId);
+                        break;
+                    case "show":
+                        aId = segments[4];
+                        aIdH = Integer.parseInt(aId);
+                        for (NAd ad : NeftaPlugin._instance._ads) {
+                            if (ad.hashCode() == aIdH) {
+                                _mainHandler.post(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        ad.Show();
+                                    }
+                                });
+                                break;
+                            }
+                        }
+                        SendUdp(address, port, sourceName, "return|show|" + aId);
+                        break;
+                    case "close":
+                        aId = segments[4];
+                        aIdH = Integer.parseInt(aId);
+                        for (NAd ad : NeftaPlugin._instance._ads) {
+                            if (ad.hashCode() == aIdH) {
+                                _mainHandler.post(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        ad.Close();
+                                    }
+                                });
+                                break;
+                            }
+                        }
+                        SendUdp(address, port, sourceName, "return|show|" + aId);
+                        break;
+                    case "add_event":
+                        String name = null;
+                        long value = 0;
+                        String customPayload = null;
+
+                        if ("progression".equals(segments[4])) {
+                            NeftaEvents.ProgressionStatus status = ToProgressionStatus(segments[5]);
+                            NeftaEvents.ProgressionType type = ToProgressionType(segments[6]);
+                            NeftaEvents.ProgressionSource source = ToProgressionSource(segments[7]);
+                            if (segments.length > 8) {
+                                name = segments[8];
+                            }
+                            if (segments.length > 9) {
+                                value = Long.parseLong(segments[9]);
+                            }
+                            if (segments.length > 10) {
+                                customPayload = segments[10];
+                            }
+                            NeftaPlugin.Events.AddProgressionEvent(status, type, source, name, value, customPayload);
+                        } else if ("receive".equals(segments[4])) {
+                            NeftaEvents.ResourceCategory category = ToResourceCategory(segments[5]);
+                            NeftaEvents.ReceiveMethod method = ToReceiveMethod(segments[6]);
+                            if (segments.length > 7) {
+                                name = segments[7];
+                            }
+                            if (segments.length > 8) {
+                                value = Long.parseLong(segments[8]);
+                            }
+                            if (segments.length > 9) {
+                                customPayload = segments[9];
+                            }
+                            NeftaPlugin.Events.AddReceiveEvent(category, method, name, value, customPayload);
+                        } else if ("spend".equals(segments[4])) {
+                            NeftaEvents.ResourceCategory category = ToResourceCategory(segments[5]);
+                            NeftaEvents.SpendMethod method = ToSpendMethod(segments[6]);
+                            if (segments.length > 7) {
+                                name = segments[7];
+                            }
+                            if (segments.length > 8) {
+                                value = Long.parseLong(segments[8]);
+                            }
+                            if (segments.length > 9) {
+                                customPayload = segments[9];
+                            }
+                            NeftaPlugin.Events.AddSpendEvent(category, method, name, value, customPayload);
+                        }
+                        SendUdp(address, port, sourceName, "return|add_event");
+                        break;
+                    case "set_override":
+                        String app_id = segments[4];
+                        String rest_url = segments[5];
+                        if (rest_url.isEmpty() || rest_url.equals("null")) {
+                            rest_url = null;
+                        }
+
+                        NeftaPlugin._instance._info._appId = app_id;
+                        NeftaPlugin._instance.SetOverride(rest_url);
+                        NeftaPlugin._instance.EnableAds(false);
+                        NeftaPlugin._instance._placements = null;
+                        NeftaPlugin._instance._cachedInitResponse = null;
+                        NeftaPlugin._instance.EnableAds(true);
+                        if (segments.length > 6 && segments[6].length() > 0) {
+                            NeftaPlugin._instance._state._nuid = segments[6];
+                        }
+
+                        SendUdp(address, port, sourceName, "return|set_override");
+                        break;
+                    case "create_file":
+                        String path = segments[4];
+                        String content = segments[5];
+
+                        File f = new File(_context.getApplicationInfo().dataDir, path);
+                        try {
+                            FileOutputStream outputStream = new FileOutputStream(f);
+                            outputStream.write(content.getBytes(StandardCharsets.UTF_8));
+                            outputStream.close();
+
+                            Log.i(TAG, "Wrote '"+ content + "' to "+ f.getAbsolutePath());
+
+                            SendUdp(address, port, sourceName, "return|create_file");
+                        } catch (Exception exception) {
+                            Log.i(TAG, "Error writing to '"+ f.getAbsolutePath() + ": "+ exception.getMessage());
+                        }
+                        break;
+                    default:
+                        Log.i(TAG, "Unrecognized command: " + control + " m:" + message);
+                        break;
+                }
+            }
+
+        });
+        _broadcastThread.start();
+    }
+
+    private void StopBroadcastServer() {
+        if (_broadcastRunnable != null) {
+            _backgroundHandler.removeCallbacks(_broadcastRunnable);
+            _broadcastRunnable = null;
+        }
+
+        if (_broadcastThread != null) {
+            _broadcastThread.interrupt();
+            _broadcastThread = null;
+        }
+
+        _broadcastSocket.close();
+        _broadcastSocket = null;
+    }
+
+    private void SendUdp(InetAddress address, int port, String to, String message) {
+        try {
+            byte[] buffer = (_name +"|"+ to +"|"+ message).getBytes();
+            DatagramPacket packet = new DatagramPacket(buffer, buffer.length, address, port);
+            _broadcastSocket.send(packet);
+        } catch (Exception e) {
+            Log.i(TAG, "Exc: "+ e.getMessage());
         }
     }
 
-    private void startServer() {
-        new Thread(() -> {
-            try {
-                _socket = new Socket(_ip, _port);
+    private void SendState(InetAddress address, int port, String to) {
+        String stateString = null;
+        try {
+            JSONObject json = new JSONObject();
+            JSONArray adUnits = new JSONArray();
+            json.put("app_id", NeftaPlugin._instance._info._appId);
+            json.put("rest_url", NeftaPlugin._instance._info._restUrl);
+            json.put("nuid", NeftaPlugin._instance._state._nuid);
+            json.put("ad_units", adUnits);
 
-                _out = new PrintWriter(new OutputStreamWriter(_socket.getOutputStream()), true);
-                _in = new BufferedInputStream(_socket.getInputStream());
+            for (Map.Entry<String, Placement> p : NeftaPlugin._instance._placements.entrySet()) {
+                Placement placement = p.getValue();
+                JSONObject placementJson = new JSONObject();
+                placementJson.put("id", p.getKey());
+                placementJson.put("type", Placement.Types.ToString(placement._type));
+                adUnits.put(placementJson);
 
-                send("log Debug server connected");
-                Log.i(TAG, "DS:Connection established");
-
-                byte[] buffer = new byte[2048];
-                int length;
-                while ((length = _in.read(buffer)) != -1) {
-                    String message = new String (buffer, 0, length);
-
-                    String control = message;
-                    int controlEnd = message.indexOf(" ");
-                    if (controlEnd != -1) {
-                        control = message.substring(0, controlEnd);
-                    }
-                    String pId;
-                    String aId;
-                    switch (control) {
-                        case "get_nuid":
-                            NeftaPlugin._instance.GetNuid(true);
-                            break;
-                        case "set_time_offset":
-                            String offsetString = message.substring(controlEnd + 1);
-                            NeftaPlugin.SetDebugTime(Long.parseLong(offsetString));
-                            send("return set_time_offset");
-                            break;
-                        case "ad_units":
-                            try {
-                                JSONObject json = new JSONObject();
-                                JSONArray adUnits = new JSONArray();
-                                json.put("ad_units", adUnits);
-
-                                for (Map.Entry<String, Placement> p : NeftaPlugin._instance._placements.entrySet()) {
-                                    Placement placement = p.getValue();
-                                    JSONObject placementJson = new JSONObject();
-                                    placementJson.put("id", p.getKey());
-                                    placementJson.put("type", Placement.Types.ToString(placement._type));
-                                    adUnits.put(placementJson);
-
-                                    JSONArray ads = new JSONArray();
-                                    for (NAd ad : NeftaPlugin._instance._ads) {
-                                        if (ad._placement == placement) {
-                                            JSONObject adJson = new JSONObject();
-                                            adJson.put("id", ad);
-                                            adJson.put("state", ad._state);
-                                            String crid = "";
-                                            if (ad._bid != null) {
-                                                crid = ad._bid._creativeId;
-                                            }
-                                            adJson.put("crid", crid);
-                                            ads.put(adJson);
-                                        }
-                                    }
-                                    placementJson.put("ads", ads);
-                                }
-                                send("return ad_units " + json);
-                            } catch (Exception ignored) {
-
-                            }
-                            break;
-                        case "getOverride":
-                            NeftaPlugin._instance.GetNuid(false);
-                            break;
-                        case "setOverride":
-                            String root = message.substring(controlEnd + 1);
-                            NeftaPlugin.Restart(root.isEmpty() || "null".equals(root) ? null : root);
-                            break;
-                        case "create":
-                            pId = message.substring(controlEnd + 1);
-                            String adId = null;
-                            for (Map.Entry<String, Placement> p : NeftaPlugin._instance._placements.entrySet()) {
-                                if (p.getKey().equals(pId)) {
-                                    Placement placement = p.getValue();
-                                    if (placement._type == Placement.Types.Banner) {
-                                        NBanner banner = new NBanner(pId, NBanner.Position.TOP);
-                                        adId = banner.toString();
-                                    } else if (placement._type == Placement.Types.Interstitial) {
-                                        NInterstitial interstitial = new NInterstitial(pId);
-                                        adId = interstitial.toString();
-                                    } else if (placement._type == Placement.Types.Rewarded) {
-                                        NRewarded rewarded = new NRewarded(pId);
-                                        adId = rewarded.toString();
-                                    }
-                                }
-                            }
-                            send("return create "+ adId);
-                            break;
-                        case "partial_bid":
-                            aId = message.substring(controlEnd + 1);
-                            String bidResponse = null;
-                            for (NAd ad : NeftaPlugin._instance._ads) {
-                                if (ad.toString().equals(aId)) {
-                                    bidResponse = ad.GetPartialBidRequest().toString();
-                                    break;
-                                }
-                            }
-                            send("return partial_bid "+ aId +" "+ bidResponse);
-                            break;
-                        case "bid":
-                            aId = message.substring(controlEnd + 1);
-                            for (NAd ad : NeftaPlugin._instance._ads) {
-                                if (ad.toString().equals(aId)) {
-                                    ad.Bid();
-                                }
-                            }
-                            send("return bid "+ aId);
-                            break;
-                        case "custom_load":
-                            int pIdEnd = message.indexOf(" ", controlEnd + 1);
-                            aId = message.substring(controlEnd + 1, pIdEnd);
-                            String bid = message.substring(pIdEnd + 1);
-                            for (NAd ad : NeftaPlugin._instance._ads) {
-                                if (ad.toString().equals(aId)) {
-                                    ad.LoadWithBidResponse(bid);
-                                }
-                            }
-                            send("return custom_load "+ aId);
-                            break;
-                        case "load":
-                            aId = message.substring(controlEnd + 1);
-                            for (NAd ad : NeftaPlugin._instance._ads) {
-                                if (ad.toString().equals(aId)) {
-                                    ad.Load();
-                                }
-                            }
-                            send("return load "+ aId);
-                            break;
-                        case "show":
-                            aId = message.substring(controlEnd + 1);
-                            for (NAd ad : NeftaPlugin._instance._ads) {
-                                if (ad.toString().equals(aId)) {
-                                    mainHandler.post(new Runnable() {
-                                        @Override
-                                        public void run() {
-                                            ad.Show();
-                                        }
-                                    });
-                                    break;
-                                }
-                            }
-                            send("return show " + aId);
-                            break;
-                        case "close":
-                            aId = message.substring(controlEnd + 1);
-                            for (NAd ad : NeftaPlugin._instance._ads) {
-                                if (ad.toString().equals(aId)) {
-                                    ad.Close();
-                                }
-                            }
-                            send("return show " + aId);
-                            break;
-                        case "add_event":
-                            String[] parameters = message.substring(controlEnd + 1).split(" ");
-                            String name = null;
-                            long value = 0;
-                            String customPayload = null;
-
-                            if ("progression".equals(parameters[0])) {
-                                NeftaEvents.ProgressionStatus status = ToProgressionStatus(parameters[1]);
-                                NeftaEvents.ProgressionType type = ToProgressionType(parameters[2]);
-                                NeftaEvents.ProgressionSource source = ToProgressionSource(parameters[3]);
-                                if (parameters.length > 4) {
-                                    name = parameters[4];
-                                }
-                                if (parameters.length > 5) {
-                                    value = Long.parseLong(parameters[5]);
-                                }
-                                if (parameters.length > 6) {
-                                    customPayload = parameters[6];
-                                }
-                                NeftaPlugin.Events.AddProgressionEvent(status, type, source, name, value, customPayload);
-                            } else if ("receive".equals(parameters[0])) {
-                                NeftaEvents.ResourceCategory category = ToResourceCategory(parameters[1]);
-                                NeftaEvents.ReceiveMethod method = ToReceiveMethod(parameters[2]);
-                                if (parameters.length > 3) {
-                                    name = parameters[3];
-                                }
-                                if (parameters.length > 4) {
-                                    value = Long.parseLong(parameters[4]);
-                                }
-                                if (parameters.length > 5) {
-                                    customPayload = parameters[5];
-                                }
-                                NeftaPlugin.Events.AddReceiveEvent(category, method, name, value, customPayload);
-                            } else if ("spend".equals(parameters[0])) {
-                                NeftaEvents.ResourceCategory category = ToResourceCategory(parameters[1]);
-                                NeftaEvents.SpendMethod method = ToSpendMethod(parameters[2]);
-                                if (parameters.length > 3) {
-                                    name = parameters[3];
-                                }
-                                if (parameters.length > 4) {
-                                    value = Long.parseLong(parameters[4]);
-                                }
-                                if (parameters.length > 5) {
-                                    customPayload = parameters[5];
-                                }
-                                NeftaPlugin.Events.AddSpendEvent(category, method, name, value, customPayload);
-                            }
-                            send("return add_event");
-                            break;
-                        case "set_override":
-                            String override = message.substring(controlEnd + 1);
-                            NeftaPlugin._instance.SetOverride(override.isEmpty() || override.equals("null") ? null : override);
-                            send("return set_override");
-                            break;
-                        default:
-                            Log.i(TAG, "Unrecognized command: " + control);
-                            break;
+                JSONArray ads = new JSONArray();
+                for (NAd ad : NeftaPlugin._instance._ads) {
+                    if (ad._placement == placement) {
+                        JSONObject adJson = new JSONObject();
+                        adJson.put("id", ad.hashCode());
+                        adJson.put("state", ad._state);
+                        String crid = "";
+                        if (ad._bid != null) {
+                            crid = ad._bid._creativeId;
+                        }
+                        adJson.put("crid", crid);
+                        ads.put(adJson);
                     }
                 }
-            } catch (Exception e) {
-                Log.i(TAG, "Disconnect or error: " + e.getMessage());
-            } finally {
-                restartServer();
+                placementJson.put("ads", ads);
             }
-        }).start();
-    }
 
-    private void sendInternal(String data) {
-        _out.print(data);
-        _out.flush();
+            stateString = json.toString();
+        } catch (Exception ignored) {
+
+        }
+
+        String message = "state|android|"+ NeftaPlugin._instance._info._bundleId +"|"+ _version +"|"+ _logLines.size() +"|"+ stateString;
+        SendUdp(address, port, to, message);
     }
 
     private NeftaEvents.ProgressionStatus ToProgressionStatus(String name) {
@@ -380,5 +464,25 @@ public class DebugServer {
             }
         }
         throw new IllegalArgumentException("Non existing SpendMethod: " + name);
+    }
+
+    private String GetBroadcastIp() {
+        String ip = null;
+        try {
+            Enumeration<NetworkInterface> interfaces = NetworkInterface.getNetworkInterfaces();
+            for (NetworkInterface networkInterface : Collections.list(interfaces)) {
+                Enumeration<InetAddress> addresses = networkInterface.getInetAddresses();
+                for (InetAddress inetAddress : Collections.list(addresses)) {
+                    if (!inetAddress.isLoopbackAddress() && inetAddress.isSiteLocalAddress()) {
+                        ip = inetAddress.getHostAddress();
+
+                        ip = ip.substring(0, ip.lastIndexOf(".") + 1) + "255";
+                    }
+                }
+            }
+        } catch (Exception e) {
+            Log.i(TAG, "Error getting ip address: " + e.getMessage());
+        }
+        return ip;
     }
 }

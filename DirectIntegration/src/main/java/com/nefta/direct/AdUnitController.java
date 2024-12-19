@@ -4,6 +4,7 @@ import android.os.Bundle;
 
 import androidx.fragment.app.Fragment;
 
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -120,10 +121,10 @@ public class AdUnitController extends Fragment {
 
     public void OnBid(NAd ad, BidResponse bidResponse, NError error) {
         if (bidResponse == null) {
-            _status.setText("OnBid failed: " + error._message);
+            SetText("OnBid failed: " + error._message);
         } else {
             _creativeId.setText(bidResponse._creativeId);
-            _status.setText("OnBid: " + bidResponse._creativeId + ": " + bidResponse._price);
+            SetText("OnBid: " + bidResponse._creativeId + ": " + bidResponse._price);
         }
     }
 
@@ -133,25 +134,30 @@ public class AdUnitController extends Fragment {
 
     public void OnLoadFail(NAd ad, NError error) {
         _creativeId.setText("");
-        _status.setText("OnLoad: failed" + error._message);
+        SetText("OnLoad: failed" + error._message);
     }
 
     public void OnLoad(NAd ad, int width, int height) {
-        _status.setText("OnLoad success");
+        SetText("OnLoad success w:"+ width+ " h:"+ height);
     }
 
     public void OnShowFail(NAd ad, NError error) {
         _creativeId.setText("");
-        _status.setText("OnShowFail " + error._message);
+        SetText("OnShowFail " + error._message);
     }
 
     public void OnShow(NAd ad) {
-        _status.setText("OnShow");
+        SetText("OnShow");
     }
 
     public void OnClose(NAd ad) {
         _ad = null;
 
         _callbacks.OnAdUnitClose(this);
+    }
+
+    protected void SetText(String text) {
+        Log.i("DI", text);
+        _status.setText(text);
     }
 }

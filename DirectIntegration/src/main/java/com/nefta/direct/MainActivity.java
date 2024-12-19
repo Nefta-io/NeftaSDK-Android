@@ -7,9 +7,7 @@ import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 
 import androidx.appcompat.app.AppCompatActivity;
-
 import androidx.fragment.app.FragmentTransaction;
-
 import com.nefta.sdk.NeftaPlugin;
 import com.nefta.direct.databinding.ActivityMainBinding;
 import com.nefta.sdk.Placement;
@@ -33,7 +31,7 @@ public class MainActivity extends AppCompatActivity {
 
         _bannerPlaceholder = (FrameLayout) view.findViewById(R.id.bannerView);
 
-        _plugin = NeftaPlugin.Init(this, "5643649824063488");
+        _plugin = NeftaPlugin.Init(this, "5702146766929920");
 
         Intent intent = getIntent();
         if (intent != null && intent.getExtras() != null) {
@@ -41,22 +39,11 @@ public class MainActivity extends AppCompatActivity {
             if (override != null && override.length() > 2) {
                 _plugin.SetOverride(override);
             }
-
-            String dmIp = intent.getStringExtra("dmIp");
-            String serial = intent.getStringExtra("serial");
-            if (dmIp != null && dmIp.length() > 2) {
-                DebugServer debugServer = new DebugServer(dmIp, serial);
-                //NeftaPlugin.OnLog = (String log) -> {
-                //    debugServer.send("log " + log);
-                //};
-            }
         }
+        new DebugServer(this);
 
         _plugin.EnableAds(true);
         _plugin.OnReady = this::OnReady;
-
-        //_plugin.SetFloorPrice("1",0.5f);
-        //_plugin.SetCustomParameter("1","applovin-max", "{\"bidfloor\":0.5}");
 
         _placementToControllers = new HashMap<>();
     }
