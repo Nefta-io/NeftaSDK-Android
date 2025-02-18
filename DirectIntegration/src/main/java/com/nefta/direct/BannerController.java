@@ -3,6 +3,9 @@ package com.nefta.direct;
 import com.nefta.sdk.NAd;
 import com.nefta.sdk.NBanner;
 import com.nefta.sdk.NBannerListener;
+import com.nefta.sdk.NeftaPlugin;
+
+import org.json.JSONObject;
 
 public class BannerController extends AdUnitController implements NBannerListener {
     private NBanner _banner;

@@ -14,8 +14,8 @@ public class InterstitialController extends AdUnitController implements NInterst
         NInterstitial interstitial = new NInterstitial(_placement._id);
         interstitial._listener = this;
 
-        interstitial.SetFloorPrice(0.5f);
-        interstitial.SetCustomParameter("applovin-max", "{\"bidfloor\":0.5}");
+        //interstitial.SetFloorPrice(0.5f);
+        //interstitial.SetCustomParameter("applovin-max", "{\"bidfloor\":0.5}");
 
         return interstitial;
     }

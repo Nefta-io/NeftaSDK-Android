@@ -238,7 +238,7 @@ public class DebugServer {
                         }
                         SendUdp(address, port, sourceName, "return|show|" + aId);
                         break;
-                    case "add_event":
+                    case "add_event": {
                         String name = null;
                         long value = 0;
                         String customPayload = null;
@@ -283,9 +283,32 @@ public class DebugServer {
                                 customPayload = segments[9];
                             }
                             NeftaPlugin.Events.AddSpendEvent(category, method, name, value, customPayload);
+                        } else if ("revenue".equals(segments[4])) {
+                            name = segments[5];
+                            value = (long) (Double.parseDouble(segments[6]) * 1000000);
+                            String currency = segments[7];
+                            if (segments.length > 8) {
+                                customPayload = segments[8];
+                            }
+                            NeftaPlugin.Events.AddPurchaseEvent(name, value, currency, customPayload);
                         }
                         SendUdp(address, port, sourceName, "return|add_event");
                         break;
+                    }
+                    case "add_unity_event": {
+                        int type = Integer.parseInt(segments[4]);
+                        int category = Integer.parseInt(segments[5]);
+                        int subCategory = Integer.parseInt(segments[6]);
+                        String name = segments[7];
+                        long value = Long.parseLong(segments[8]);
+                        String customPayload = null;
+                        if (segments.length > 9) {
+                            customPayload = segments[9];
+                        }
+                        NeftaPlugin._instance.Record(type, category, subCategory, name, value, customPayload);
+                        SendUdp(address, port, sourceName, "return|add_unity_event");
+                        break;
+                    }
                     case "set_override":
                         String app_id = segments[4];
                         String rest_url = segments[5];
@@ -295,10 +318,8 @@ public class DebugServer {
 
                         NeftaPlugin._instance._info._appId = app_id;
                         NeftaPlugin._instance.SetOverride(rest_url);
-                        NeftaPlugin._instance.EnableAds(false);
                         NeftaPlugin._instance._placements = null;
                         NeftaPlugin._instance._cachedInitResponse = null;
-                        NeftaPlugin._instance.EnableAds(true);
                         if (segments.length > 6 && segments[6].length() > 0) {
                             NeftaPlugin._instance._state._nuid = segments[6];
                         }

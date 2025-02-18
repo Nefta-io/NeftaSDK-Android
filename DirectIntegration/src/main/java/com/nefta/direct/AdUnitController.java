@@ -150,6 +150,10 @@ public class AdUnitController extends Fragment {
         SetText("OnShow");
     }
 
+    public void OnClick(NAd ad) {
+        SetText("OnClick");
+    }
+
     public void OnClose(NAd ad) {
         _ad = null;
 
