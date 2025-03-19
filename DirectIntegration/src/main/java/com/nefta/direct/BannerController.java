@@ -3,9 +3,6 @@ package com.nefta.direct;
 import com.nefta.sdk.NAd;
 import com.nefta.sdk.NBanner;
 import com.nefta.sdk.NBannerListener;
-import com.nefta.sdk.NeftaPlugin;
-
-import org.json.JSONObject;
 
 public class BannerController extends AdUnitController implements NBannerListener {
     private NBanner _banner;
@@ -49,10 +46,10 @@ public class BannerController extends AdUnitController implements NBannerListene
                 _banner.SetAutoRefresh(true);
                 _showButton.setText("Loading");
                 _flowState = FLOW_AUTO_LOAD;
-                _banner.Show();
+                _banner.Show(_activity);
                 break;
             case FLOW_MANUAL:
-                _banner.Show();
+                _banner.Show(_activity);
                 break;
             case FLOW_AUTO_LOAD:
 
@@ -65,7 +62,7 @@ public class BannerController extends AdUnitController implements NBannerListene
             case FLOW_AUTO_HIDDEN:
                 _flowState = FLOW_AUTO_SHOWN;
                 _showButton.setText("Hide");
-                _banner.Show();
+                _banner.Show(_activity);
                 break;
         }
     }

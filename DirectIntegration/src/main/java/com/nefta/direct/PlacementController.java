@@ -1,5 +1,6 @@
 package com.nefta.direct;
 
+import android.app.Activity;
 import android.os.Bundle;
 
 import androidx.fragment.app.Fragment;
@@ -15,12 +16,14 @@ import com.nefta.sdk.Placement;
 
 public class PlacementController extends Fragment implements IAdUnitCallback {
 
-    protected Placement _placement;
+    private Placement _placement;
+    private Activity _activity;
 
     public PlacementController() { }
 
-    public void Init(Placement placement) {
+    public void Init(Placement placement, Activity activity) {
         _placement = placement;
+        _activity = activity;
     }
 
     @Override
@@ -43,7 +46,7 @@ public class PlacementController extends Fragment implements IAdUnitCallback {
                 } else {
                     return;
                 }
-                adUnit.Init(_placement, PlacementController.this);
+                adUnit.Init(_placement, _activity, PlacementController.this);
 
                 FragmentTransaction ft = getChildFragmentManager().beginTransaction();
                 ft.add(R.id.adUnits, adUnit);

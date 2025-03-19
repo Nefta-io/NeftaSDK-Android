@@ -27,6 +27,7 @@ public class MainActivity extends AppCompatActivity {
     private final static String preferences = "preferences";
     private final static String trackingKey = "tracking";
     private NeftaPlugin _plugin;
+    private DebugServer _debugServer;
     private HashMap<Placement, PlacementController> _placementToControllers;
 
     public static FrameLayout _bannerPlaceholder;
@@ -42,16 +43,17 @@ public class MainActivity extends AppCompatActivity {
         _bannerPlaceholder = (FrameLayout) view.findViewById(R.id.bannerView);
 
         NeftaPlugin.EnableLogging(true);
-        _plugin = NeftaPlugin.Init(this, "5643649824063488");
-        SetTracking();
         Intent intent = getIntent();
         if (intent != null && intent.getExtras() != null) {
             String override = intent.getStringExtra("override");
             if (override != null && override.length() > 2) {
-                _plugin.SetOverride(override);
+                NeftaPlugin.SetOverride(override);
             }
         }
-        new DebugServer(this);
+        _plugin = NeftaPlugin.Init(this, "5643649824063488");
+        _plugin.SetContentRating(NeftaPlugin.ContentRating_Teen);
+        SetTracking();
+        _debugServer = new DebugServer(this);
 
         _plugin.OnReady = this::OnReady;
         _plugin.OnBehaviourInsight = this::OnBehaviourInsight;
@@ -76,6 +78,14 @@ public class MainActivity extends AppCompatActivity {
         _plugin.OnPause();
     }
 
+    @Override
+    public void onDestroy() {
+        _bannerPlaceholder = null;
+        _debugServer.Destroy();
+
+        super.onDestroy();
+    }
+
     private void OnReady(HashMap<String, Placement> placements) {
         _placementToControllers.clear();
         ((LinearLayout)findViewById(R.id.placementContainer)).removeAllViews();
@@ -84,7 +94,7 @@ public class MainActivity extends AppCompatActivity {
         for (Map.Entry<String, Placement> p : placements.entrySet()) {
             Placement placement = p.getValue();
             PlacementController placementController = new PlacementController();
-            placementController.Init(placement);
+            placementController.Init(placement, this);
             ft.add(R.id.placementContainer, placementController);
             _placementToControllers.put(placement, placementController);
         }

@@ -1,5 +1,6 @@
 package com.nefta.direct;
 
+import android.app.Activity;
 import android.os.Bundle;
 
 import androidx.fragment.app.Fragment;
@@ -21,6 +22,8 @@ import com.nefta.sdk.Placement;
 import java.util.concurrent.ThreadLocalRandom;
 
 public class AdUnitController extends Fragment {
+    private boolean _isActive;
+    private boolean _isCloseCallbackPending;
 
     protected Placement _placement;
     protected IAdUnitCallback _callbacks;
@@ -28,12 +31,14 @@ public class AdUnitController extends Fragment {
     protected TextView _creativeId;
     protected TextView _status;
 
+    protected Activity _activity;
     protected NAd _ad;
 
     public AdUnitController() { }
 
-    public void Init(Placement placement, IAdUnitCallback callbacks) {
+    public void Init(Placement placement, Activity activity, IAdUnitCallback callbacks) {
         _placement = placement;
+        _activity = activity;
         _callbacks = callbacks;
     }
 
@@ -112,7 +117,7 @@ public class AdUnitController extends Fragment {
     }
 
     void OnShowClick() {
-        _ad.Show();
+        _ad.Show(_activity);
     }
 
     void OnDestroyClick() {
@@ -134,7 +139,7 @@ public class AdUnitController extends Fragment {
 
     public void OnLoadFail(NAd ad, NError error) {
         _creativeId.setText("");
-        SetText("OnLoad: failed" + error._message);
+        SetText("OnLoadFail: " + error._message);
     }
 
     public void OnLoad(NAd ad, int width, int height) {
@@ -157,7 +162,27 @@ public class AdUnitController extends Fragment {
     public void OnClose(NAd ad) {
         _ad = null;
 
-        _callbacks.OnAdUnitClose(this);
+        if (_isActive) {
+            _callbacks.OnAdUnitClose(this);
+        } else {
+            _isCloseCallbackPending = true;
+        }
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        _isActive = false;
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        _isActive = true;
+        if (_isCloseCallbackPending) {
+            _isCloseCallbackPending = false;
+            _callbacks.OnAdUnitClose(this);
+        }
     }
 
     protected void SetText(String text) {

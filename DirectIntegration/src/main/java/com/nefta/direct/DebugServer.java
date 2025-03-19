@@ -1,5 +1,6 @@
 package com.nefta.direct;
 
+import android.app.Activity;
 import android.content.Context;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
@@ -26,6 +27,7 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
+import java.net.SocketException;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -39,7 +41,7 @@ public class DebugServer {
     private final String TAG = "DS";
     private final int _broadcastPort = 12010;
 
-    private Context _context;
+    private Activity _activity;
     private String _name;
     private String _version;
     private final Handler _mainHandler;
@@ -51,8 +53,8 @@ public class DebugServer {
     private Runnable _broadcastRunnable;
     private final List<String> _logLines;
 
-    public DebugServer(Context context) {
-        _context = context;
+    public DebugServer(Activity activity) {
+        _activity = activity;
         _mainHandler = new Handler(Looper.getMainLooper());
 
         _backgroundThread = new HandlerThread("NetworkThread");
@@ -63,8 +65,8 @@ public class DebugServer {
 
         int buildNumber = 0;
         try {
-            PackageManager pm = context.getPackageManager();
-            PackageInfo packageInfo = pm.getPackageInfo(context.getPackageName(), 0);
+            PackageManager pm = _activity.getPackageManager();
+            PackageInfo packageInfo = pm.getPackageInfo(_activity.getPackageName(), 0);
             buildNumber = packageInfo.versionCode;
         } catch (Exception ignored) {
 
@@ -80,6 +82,11 @@ public class DebugServer {
         };
 
         startBroadcastServer();
+    }
+
+    public void Destroy() {
+        StopBroadcastServer();
+        _activity = null;
     }
 
     private void startBroadcastServer() {
@@ -109,6 +116,9 @@ public class DebugServer {
                 DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
                 try {
                     _broadcastSocket.receive(packet);
+                } catch (SocketException e) {
+                    Log.i(TAG, "Socket Exc: "+ e.getMessage());
+                    return;
                 } catch (Exception e) {
                     Log.i(TAG, "Exc: "+ e.getMessage());
                 }
@@ -214,7 +224,7 @@ public class DebugServer {
                                 _mainHandler.post(new Runnable() {
                                     @Override
                                     public void run() {
-                                        ad.Show();
+                                        ad.Show(_activity);
                                     }
                                 });
                                 break;
@@ -309,6 +319,19 @@ public class DebugServer {
                         SendUdp(address, port, sourceName, "return|add_unity_event");
                         break;
                     }
+                    case "add_external_mediation_request": {
+                        String provider = segments[4];
+                        int type = Integer.parseInt(segments[5]);
+                        double requestedFloor = Double.parseDouble(segments[6]);
+                        double calculatedFloor = Double.parseDouble(segments[7]);
+                        String adUnitId = segments[8];
+                        double revenue = Double.parseDouble(segments[9]);
+                        String precision = segments[10];
+                        int status = Integer.parseInt(segments[11]);
+                        NeftaPlugin.OnExternalMediationRequest(provider, type, requestedFloor, calculatedFloor, adUnitId, revenue, precision, status);
+                        SendUdp(address, port, sourceName, "return|add_ad_load");
+                        break;
+                    }
                     case "set_override":
                         String app_id = segments[4];
                         String rest_url = segments[5];
@@ -317,7 +340,7 @@ public class DebugServer {
                         }
 
                         NeftaPlugin._instance._info._appId = app_id;
-                        NeftaPlugin._instance.SetOverride(rest_url);
+                        NeftaPlugin.SetOverride(rest_url);
                         NeftaPlugin._instance._placements = null;
                         NeftaPlugin._instance._cachedInitResponse = null;
                         if (segments.length > 6 && segments[6].length() > 0) {
@@ -330,8 +353,15 @@ public class DebugServer {
                         String path = segments[4];
                         String content = segments[5];
 
-                        File f = new File(_context.getApplicationInfo().dataDir, path);
+                        File f = new File(_activity.getApplicationInfo().dataDir, path);
                         try {
+                            File parentDir = f.getParentFile();
+                            if (parentDir != null && !parentDir.exists()) {
+                                if (parentDir.mkdirs()) {
+                                    Log.i(TAG, "Parent directories created successfully");
+                                }
+                            }
+
                             FileOutputStream outputStream = new FileOutputStream(f);
                             outputStream.write(content.getBytes(StandardCharsets.UTF_8));
                             outputStream.close();
@@ -384,7 +414,7 @@ public class DebugServer {
             JSONObject json = new JSONObject();
             JSONArray adUnits = new JSONArray();
             json.put("app_id", NeftaPlugin._instance._info._appId);
-            json.put("rest_url", NeftaPlugin._instance._info._restUrl);
+            json.put("rest_url", NeftaPlugin._efUrl);
             json.put("nuid", NeftaPlugin._instance._state._nuid);
             json.put("ad_units", adUnits);
 
