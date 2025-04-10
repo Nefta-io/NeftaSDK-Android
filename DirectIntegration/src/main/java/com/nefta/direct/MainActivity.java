@@ -58,7 +58,7 @@ public class MainActivity extends AppCompatActivity {
         _plugin.OnReady = this::OnReady;
         _plugin.OnBehaviourInsight = this::OnBehaviourInsight;
 
-        String[] insightList = {"p_churn_14d", "p_churn_1d", "p_churn_30d", "nonE"};
+        String[] insightList = {"p_churn_14d", "p_churn_1d", "calculated_user_floor_price_rewarded", "nonE"};
         _plugin.GetBehaviourInsight(insightList);
 
         _placementToControllers = new HashMap<>();

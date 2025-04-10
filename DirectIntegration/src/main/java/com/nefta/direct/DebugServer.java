@@ -322,13 +322,14 @@ public class DebugServer {
                     case "add_external_mediation_request": {
                         String provider = segments[4];
                         int type = Integer.parseInt(segments[5]);
-                        double requestedFloor = Double.parseDouble(segments[6]);
-                        double calculatedFloor = Double.parseDouble(segments[7]);
-                        String adUnitId = segments[8];
-                        double revenue = Double.parseDouble(segments[9]);
-                        String precision = segments[10];
-                        int status = Integer.parseInt(segments[11]);
-                        NeftaPlugin.OnExternalMediationRequest(provider, type, requestedFloor, calculatedFloor, adUnitId, revenue, precision, status);
+                        String recommendedAdUnitId = segments[6];
+                        double requestedFloor = Double.parseDouble(segments[7]);
+                        double calculatedFloor = Double.parseDouble(segments[8]);
+                        String adUnitId = segments[9];
+                        double revenue = Double.parseDouble(segments[10]);
+                        String precision = segments[11];
+                        int status = Integer.parseInt(segments[12]);
+                        NeftaPlugin.OnExternalMediationRequest(provider, type, recommendedAdUnitId, requestedFloor, calculatedFloor, adUnitId, revenue, precision, status);
                         SendUdp(address, port, sourceName, "return|add_ad_load");
                         break;
                     }
