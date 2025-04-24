@@ -15,8 +15,19 @@
         android:layout_height="52dp"
         android:layout_gravity="center_horizontal"
         android:background="#000000"
-        android:translationY="-1dp" />
+        android:translationY="-1dp" >
 
+    </FrameLayout>
+
+
+    <RelativeLayout
+        android:id="@+id/leaderView"
+        android:layout_width="match_parent"
+        android:layout_height="90dp"
+        android:background="#0033FF"
+        android:visibility="gone">
+
+    </RelativeLayout>
 
     <TextView
         android:id="@+id/mainTitle"

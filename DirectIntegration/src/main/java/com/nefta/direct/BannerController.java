@@ -18,7 +18,7 @@ public class BannerController extends AdUnitController implements NBannerListene
 
     @Override
     protected NAd CreateInstance() {
-        _banner = new NBanner(_placement._id, MainActivity._bannerPlaceholder);
+        _banner = new NBanner(_placement._id, MainActivity.GetBannerPlaceholder());
         _banner._listener = this;
         return _banner;
     }
