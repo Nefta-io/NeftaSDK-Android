@@ -13,12 +13,14 @@ import android.widget.Button;
 import android.widget.TextView;
 
 import com.nefta.sdk.BidResponse;
+import com.nefta.sdk.Insight;
 import com.nefta.sdk.NAd;
 import com.nefta.sdk.NError;
 import com.nefta.sdk.NeftaEvents;
 import com.nefta.sdk.NeftaPlugin;
 import com.nefta.sdk.Placement;
 
+import java.util.HashMap;
 import java.util.concurrent.ThreadLocalRandom;
 
 public class AdUnitController extends Fragment {
@@ -95,15 +97,25 @@ public class AdUnitController extends Fragment {
         String name = "example event";
         long randomValue = random.nextLong(0, 101);
         if (_placement._type == Placement.Types.Banner) {
+            NeftaPlugin._instance.GetBehaviourInsight(new String[] { "calculated_user_floor_price_banner", "calculated_user_floor_price_interstitial", "calculated_user_floor_price_rewarded" });
+
             NeftaEvents.ProgressionStatus progressionStatus = NeftaEvents.ProgressionStatus.FromInt(random.nextInt(0, 3));
             NeftaEvents.ProgressionType progressionType = NeftaEvents.ProgressionType.FromInt(random.nextInt(0, 7));
             NeftaEvents.ProgressionSource progressionSource = NeftaEvents.ProgressionSource.FromInt(random.nextInt(0, 7));
             NeftaPlugin.Events.AddProgressionEvent(progressionStatus, progressionType, progressionSource, name, randomValue);
         } else if (_placement._type == Placement.Types.Interstitial) {
+            NeftaPlugin._instance.GetBehaviourInsight(new String[] { "calculated_user_floor_price_interstitial" }, (HashMap<String, Insight> behaviourInsight) -> {
+                Log.i("DI", "Interstitial insight: "+ behaviourInsight.get("calculated_user_floor_price_interstitial")._float);
+            });
+
             NeftaEvents.ResourceCategory resourceCategory = NeftaEvents.ResourceCategory.FromInt(random.nextInt(0, 9));
             NeftaEvents.ReceiveMethod receiveMethod = NeftaEvents.ReceiveMethod.FromInt(random.nextInt(0, 8));
             NeftaPlugin.Events.AddReceiveEvent(resourceCategory, receiveMethod, name, randomValue);
         } else {
+            NeftaPlugin._instance.GetBehaviourInsight(new String[] { "calculated_user_floor_price_rewarded" }, (HashMap<String, Insight> behaviourInsight) -> {
+                Log.i("DI", "Rewarded insight: "+ behaviourInsight.get("calculated_user_floor_price_rewarded")._float);
+            });
+
             NeftaEvents.ResourceCategory resourceCategory = NeftaEvents.ResourceCategory.FromInt(random.nextInt(0, 9));
             NeftaEvents.SpendMethod spendMethod = NeftaEvents.SpendMethod.FromInt(random.nextInt(0, 8));
             NeftaPlugin.Events.AddSpendEvent(resourceCategory, spendMethod, name, randomValue);

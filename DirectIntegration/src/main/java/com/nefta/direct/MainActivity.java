@@ -1,6 +1,5 @@
 package com.nefta.direct;
 
-import android.app.Activity;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -82,10 +81,9 @@ public class MainActivity extends AppCompatActivity {
         _debugServer = new DebugServer(this);
 
         _plugin.OnReady = this::OnReady;
-        _plugin.OnBehaviourInsight = this::OnBehaviourInsight;
 
-        String[] insightList = {"p_churn_14d", "p_churn_1d", "calculated_user_floor_price_rewarded", "nonE"};
-        _plugin.GetBehaviourInsight(insightList);
+        String[] insightList = {"p_churn_14d", "p_churn_1d", "calculated_user_floor_price_rewarded"};
+        _plugin.GetBehaviourInsight(insightList, this::OnBehaviourInsight);
 
         _placementToControllers = new HashMap<>();
     }
@@ -132,7 +130,7 @@ public class MainActivity extends AppCompatActivity {
         for (Map.Entry<String, Insight> entry : behaviourInsight.entrySet()) {
             String name = entry.getKey();
             Insight insight = entry.getValue();
-            Log.i("DI", "Behaviour insight "+ name + " status: "+ insight._status + " i:"+ insight._int + " f:"+ insight._float + " s:"+ insight._string);
+            Log.i("DI", "Behaviour insight "+ name + " i:"+ insight._int + " f:"+ insight._float + " s:"+ insight._string);
         }
     }
 
