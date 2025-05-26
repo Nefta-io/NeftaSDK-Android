@@ -51,20 +51,7 @@ public class MainActivity extends AppCompatActivity {
         ActivityMainBinding binding = ActivityMainBinding.inflate(getLayoutInflater());
         View view = binding.getRoot();
         setContentView(view);
-
-        _bannerPlaceholder = (FrameLayout) view.findViewById(R.id.bannerView);
-        _leaderPlaceholder = (RelativeLayout) view.findViewById(R.id.leaderView);
-
-        WindowManager windowManager = (WindowManager) getSystemService(Context.WINDOW_SERVICE);
-        DisplayMetrics displayMetrics = new DisplayMetrics();
-        Display display = windowManager.getDefaultDisplay();
-        display.getMetrics(displayMetrics);
-        Point point = new Point();
-        display.getRealSize(point);
-        double diagonalInInches = Math.sqrt(Math.pow((double)point.x / displayMetrics.xdpi, 2) + Math.pow((double)point.y / displayMetrics.ydpi, 2));
-        _isTablet = diagonalInInches >= 6.5 && (getResources().getConfiguration().screenLayout & Configuration.SCREENLAYOUT_SIZE_MASK) >= Configuration.SCREENLAYOUT_SIZE_LARGE;
-        _bannerPlaceholder.setVisibility(_isTablet ? View.GONE : View.VISIBLE);
-        _leaderPlaceholder.setVisibility(_isTablet ? View.VISIBLE : View.GONE);
+        AdjustForTablet(view);
         
         NeftaPlugin.EnableLogging(true);
         Intent intent = getIntent();
@@ -161,5 +148,21 @@ public class MainActivity extends AppCompatActivity {
             AlertDialog dialog = builder.create();
             dialog.show();
         }
+    }
+
+    private void AdjustForTablet(View view) {
+        _bannerPlaceholder = (FrameLayout) view.findViewById(R.id.bannerView);
+        _leaderPlaceholder = (RelativeLayout) view.findViewById(R.id.leaderView);
+
+        WindowManager windowManager = (WindowManager) getSystemService(Context.WINDOW_SERVICE);
+        DisplayMetrics displayMetrics = new DisplayMetrics();
+        Display display = windowManager.getDefaultDisplay();
+        display.getMetrics(displayMetrics);
+        Point point = new Point();
+        display.getRealSize(point);
+        double diagonalInInches = Math.sqrt(Math.pow((double)point.x / displayMetrics.xdpi, 2) + Math.pow((double)point.y / displayMetrics.ydpi, 2));
+        _isTablet = diagonalInInches >= 6.5 && (getResources().getConfiguration().screenLayout & Configuration.SCREENLAYOUT_SIZE_MASK) >= Configuration.SCREENLAYOUT_SIZE_LARGE;
+        _bannerPlaceholder.setVisibility(_isTablet ? View.GONE : View.VISIBLE);
+        _leaderPlaceholder.setVisibility(_isTablet ? View.VISIBLE : View.GONE);
     }
 }

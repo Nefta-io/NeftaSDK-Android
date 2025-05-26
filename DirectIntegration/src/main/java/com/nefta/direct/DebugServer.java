@@ -329,7 +329,15 @@ public class DebugServer {
                         double revenue = Double.parseDouble(segments[10]);
                         String precision = segments[11];
                         int status = Integer.parseInt(segments[12]);
-                        NeftaPlugin.OnExternalMediationRequest(provider, type, recommendedAdUnitId, requestedFloor, calculatedFloor, adUnitId, revenue, precision, status);
+                        String providerStatus = null;
+                        if (segments.length > 13) {
+                            providerStatus = segments[13];
+                        }
+                        String networkStatus = null;
+                        if (segments.length > 14) {
+                            networkStatus = segments[14];
+                        }
+                        NeftaPlugin.OnExternalMediationRequest(provider, type, recommendedAdUnitId, requestedFloor, calculatedFloor, adUnitId, revenue, precision, status, providerStatus, networkStatus);
                         SendUdp(address, port, sourceName, "return|add_ad_load");
                         break;
                     }

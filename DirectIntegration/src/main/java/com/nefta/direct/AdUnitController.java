@@ -97,7 +97,14 @@ public class AdUnitController extends Fragment {
         String name = "example event";
         long randomValue = random.nextLong(0, 101);
         if (_placement._type == Placement.Types.Banner) {
-            NeftaPlugin._instance.GetBehaviourInsight(new String[] { "calculated_user_floor_price_banner", "calculated_user_floor_price_interstitial", "calculated_user_floor_price_rewarded" });
+            NeftaPlugin._instance.GetBehaviourInsight(new String[] { "calculated_user_floor_price_banner"}, (HashMap<String, Insight> behaviourInsight) -> {
+                double bidFloor = 0;
+                Insight insight = behaviourInsight.get("calculated_user_floor_price_banner");
+                if (insight != null) {
+                    bidFloor = insight._float;
+                }
+                Log.i("DI", "Banner insight: "+ bidFloor);
+            });
 
             NeftaEvents.ProgressionStatus progressionStatus = NeftaEvents.ProgressionStatus.FromInt(random.nextInt(0, 3));
             NeftaEvents.ProgressionType progressionType = NeftaEvents.ProgressionType.FromInt(random.nextInt(0, 7));
@@ -105,7 +112,12 @@ public class AdUnitController extends Fragment {
             NeftaPlugin.Events.AddProgressionEvent(progressionStatus, progressionType, progressionSource, name, randomValue);
         } else if (_placement._type == Placement.Types.Interstitial) {
             NeftaPlugin._instance.GetBehaviourInsight(new String[] { "calculated_user_floor_price_interstitial" }, (HashMap<String, Insight> behaviourInsight) -> {
-                Log.i("DI", "Interstitial insight: "+ behaviourInsight.get("calculated_user_floor_price_interstitial")._float);
+                double bidFloor = 0;
+                Insight insight = behaviourInsight.get("calculated_user_floor_price_interstitial");
+                if (insight != null) {
+                    bidFloor = insight._float;
+                }
+                Log.i("DI", "Interstitial insight: "+ bidFloor);
             });
 
             NeftaEvents.ResourceCategory resourceCategory = NeftaEvents.ResourceCategory.FromInt(random.nextInt(0, 9));
@@ -113,7 +125,12 @@ public class AdUnitController extends Fragment {
             NeftaPlugin.Events.AddReceiveEvent(resourceCategory, receiveMethod, name, randomValue);
         } else {
             NeftaPlugin._instance.GetBehaviourInsight(new String[] { "calculated_user_floor_price_rewarded" }, (HashMap<String, Insight> behaviourInsight) -> {
-                Log.i("DI", "Rewarded insight: "+ behaviourInsight.get("calculated_user_floor_price_rewarded")._float);
+                double bidFloor = 0;
+                Insight insight = behaviourInsight.get("calculated_user_floor_price_rewarded");
+                if (insight != null) {
+                    bidFloor = insight._float;
+                }
+                Log.i("DI", "Rewarded insight: "+ bidFloor);
             });
 
             NeftaEvents.ResourceCategory resourceCategory = NeftaEvents.ResourceCategory.FromInt(random.nextInt(0, 9));
