@@ -20,6 +20,8 @@ import com.nefta.sdk.NeftaEvents;
 import com.nefta.sdk.NeftaPlugin;
 import com.nefta.sdk.Placement;
 
+import org.json.JSONObject;
+
 import java.util.HashMap;
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -173,6 +175,8 @@ public class AdUnitController extends Fragment {
 
     public void OnLoad(NAd ad, int width, int height) {
         SetText("OnLoad success w:"+ width+ " h:"+ height);
+
+        NeftaPlugin.OnExternalMediationRequest("internal-test", ad._type._code, "recomA"+ad._bid._id, 0.2, 0.3, "seleA", 0.2, "prec", 1, null, null);
     }
 
     public void OnShowFail(NAd ad, NError error) {
@@ -182,6 +186,8 @@ public class AdUnitController extends Fragment {
 
     public void OnShow(NAd ad) {
         SetText("OnShow");
+
+        NeftaPlugin.OnExternalMediationImpression("internal-test", new JSONObject(), ad._type._code, 0.2, "pre");
     }
 
     public void OnClick(NAd ad) {
