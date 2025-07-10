@@ -2,7 +2,6 @@ package com.nefta.direct;
 
 import android.content.Context;
 import android.content.DialogInterface;
-import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.Configuration;
 import android.graphics.Point;
@@ -21,7 +20,7 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.FragmentTransaction;
 
-import com.nefta.sdk.Insight;
+import com.nefta.sdk.Insights;
 import com.nefta.sdk.NeftaPlugin;
 import com.nefta.direct.databinding.ActivityMainBinding;
 import com.nefta.sdk.Placement;
@@ -52,41 +51,19 @@ public class MainActivity extends AppCompatActivity {
         View view = binding.getRoot();
         setContentView(view);
         AdjustForTablet(view);
-        
-        NeftaPlugin.EnableLogging(true);
-        Intent intent = getIntent();
-        if (intent != null && intent.getExtras() != null) {
-            String override = intent.getStringExtra("override");
-            if (override != null && override.length() > 2) {
-                NeftaPlugin.SetOverride(override);
-            }
-        }
 
+        _debugServer = new DebugServer(this, getIntent());
+
+        NeftaPlugin.EnableLogging(true);
         _plugin = NeftaPlugin.Init(this, "5643649824063488");
         _plugin.SetContentRating(NeftaPlugin.ContentRating_Teen);
         SetTracking();
-        _debugServer = new DebugServer(this);
 
         _plugin.OnReady = this::OnReady;
 
-        String[] insightList = {"p_churn_14d", "p_churn_1d", "calculated_user_floor_price_rewarded"};
-        _plugin.GetBehaviourInsight(insightList, this::OnBehaviourInsight);
+        _plugin.GetInsights(Insights.CHURN | Insights.BANNER, this::OnInsights, 5);
 
         _placementToControllers = new HashMap<>();
-    }
-
-    @Override
-    protected void onResume() {
-        super.onResume();
-
-        _plugin.OnResume();
-    }
-
-    @Override
-    protected void onPause() {
-        super.onPause();
-
-        _plugin.OnPause();
     }
 
     @Override
@@ -113,11 +90,13 @@ public class MainActivity extends AppCompatActivity {
         ft.commit();
     }
 
-    private void OnBehaviourInsight(HashMap<String, Insight> behaviourInsight) {
-        for (Map.Entry<String, Insight> entry : behaviourInsight.entrySet()) {
-            String name = entry.getKey();
-            Insight insight = entry.getValue();
-            Log.i("DI", "Behaviour insight "+ name + " i:"+ insight._int + " f:"+ insight._float + " s:"+ insight._string);
+    private void OnInsights(Insights insights) {
+        Log.i("DI", "OnInsights");
+        if (insights._churn != null) {
+            Log.i("DI", "Insight churn d1: " + insights._churn._d1_probability);
+        }
+        if (insights._interstitial != null) {
+            Log.i("DI", "Insight interstitial floor: " + insights._interstitial._floorPrice);
         }
     }
 

@@ -1,7 +1,7 @@
 package com.nefta.direct;
 
 import android.app.Activity;
-import android.content.Context;
+import android.content.Intent;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.os.Build;
@@ -10,6 +10,7 @@ import android.os.HandlerThread;
 import android.os.Looper;
 import android.util.Log;
 
+import com.nefta.sdk.Insights;
 import com.nefta.sdk.NAd;
 import com.nefta.sdk.NBanner;
 import com.nefta.sdk.NInterstitial;
@@ -36,6 +37,8 @@ import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class DebugServer {
     private final String TAG = "DS";
@@ -52,8 +55,9 @@ public class DebugServer {
     private DatagramSocket _broadcastSocket;
     private Runnable _broadcastRunnable;
     private final List<String> _logLines;
+    private ExecutorService _executor;
 
-    public DebugServer(Activity activity) {
+    public DebugServer(Activity activity, Intent intent) {
         _activity = activity;
         _mainHandler = new Handler(Looper.getMainLooper());
 
@@ -63,18 +67,26 @@ public class DebugServer {
 
         _name = Build.MANUFACTURER + " " + Build.MODEL;
 
-        int buildNumber = 0;
         try {
             PackageManager pm = _activity.getPackageManager();
             PackageInfo packageInfo = pm.getPackageInfo(_activity.getPackageName(), 0);
-            buildNumber = packageInfo.versionCode;
+
+            _version = packageInfo.versionName + "." + packageInfo.versionCode;
         } catch (Exception ignored) {
 
         }
 
-        _version = NeftaPlugin._instance._info._bundleVersion + "." + buildNumber;
+        String override = null;
+        if (intent != null && intent.getExtras() != null) {
+            override = intent.getStringExtra("override");
+            if (override != null && override.length() > 2) {
+                NeftaPlugin.SetOverride(override + "/sdk/init");
+            }
+        }
+
         _logLines = new ArrayList<>();
 
+        NeftaPlugin.SetDebugTime(0);
         NeftaPlugin.OnLog = (String log) -> {
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS");
             LocalDateTime now = LocalDateTime.now();
@@ -315,7 +327,22 @@ public class DebugServer {
                         if (segments.length > 9) {
                             customPayload = segments[9];
                         }
-                        NeftaPlugin._instance.Record(type, category, subCategory, name, value, customPayload);
+                        int repeat = 1;
+                        if (segments.length > 10) {
+                            repeat = Integer.parseInt(segments[10]);
+                        }
+
+                        if (_executor == null) {
+                            _executor = Executors.newFixedThreadPool(10);
+                        }
+
+                        for (int i = 0; i < repeat; i++) {
+                            final String cp = customPayload;
+                            _executor.submit(() -> {
+                                NeftaPlugin._instance.Record(type, category, subCategory, name, value, cp);
+                            });
+                        }
+
                         SendUdp(address, port, sourceName, "return|add_unity_event");
                         break;
                     }
@@ -338,9 +365,28 @@ public class DebugServer {
                             networkStatus = segments[14];
                         }
                         NeftaPlugin.OnExternalMediationRequest(provider, type, recommendedAdUnitId, requestedFloor, calculatedFloor, adUnitId, revenue, precision, status, providerStatus, networkStatus);
-                        SendUdp(address, port, sourceName, "return|add_ad_load");
+                        SendUdp(address, port, sourceName, "return|add_external_mediation_request");
                         break;
                     }
+                    case "add_external_mediation_impression": {
+                        String path = segments[4];
+                        int adType = Integer.parseInt(segments[5]);
+                        double revenue = Double.parseDouble(segments[6]);
+                        String precision = segments[7];
+                        NeftaPlugin.OnExternalMediationImpression(path, null, adType, revenue, precision);
+                        SendUdp(address, port, sourceName, "return|add_external_mediation_impression");
+                        break;
+                    }
+                    case "get_insights":
+                        int insightFlags = Integer.parseInt(segments[4]);
+                        int callbackIndex = Integer.parseInt(segments[5]);
+
+                        NeftaPlugin._instance.GetInsights(insightFlags, (insights) -> {
+                            ForwardInsights(callbackIndex, insights);
+                        });
+
+                        SendUdp(address, port, sourceName, "return|get_insights");
+                        break;
                     case "set_override":
                         String app_id = segments[4];
                         String rest_url = segments[5];
@@ -349,7 +395,7 @@ public class DebugServer {
                         }
 
                         NeftaPlugin._instance._info._appId = app_id;
-                        NeftaPlugin.SetOverride(rest_url);
+                        //NeftaPlugin.SetOverride(rest_url);
                         NeftaPlugin._instance._placements = null;
                         NeftaPlugin._instance._cachedInitResponse = null;
                         if (segments.length > 6 && segments[6].length() > 0) {
@@ -418,37 +464,42 @@ public class DebugServer {
     }
 
     private void SendState(InetAddress address, int port, String to) {
+        String bundleId = null;
         String stateString = null;
         try {
             JSONObject json = new JSONObject();
             JSONArray adUnits = new JSONArray();
-            json.put("app_id", NeftaPlugin._instance._info._appId);
-            json.put("rest_url", NeftaPlugin._efUrl);
-            json.put("nuid", NeftaPlugin._instance._state._nuid);
+            //json.put("rest_url", NeftaPlugin._efUrl);
             json.put("ad_units", adUnits);
 
-            for (Map.Entry<String, Placement> p : NeftaPlugin._instance._placements.entrySet()) {
-                Placement placement = p.getValue();
-                JSONObject placementJson = new JSONObject();
-                placementJson.put("id", p.getKey());
-                placementJson.put("type", Placement.Types.ToString(placement._type));
-                adUnits.put(placementJson);
+            if (NeftaPlugin._instance != null) {
+                bundleId = NeftaPlugin._instance._info._bundleId;
+                json.put("app_id", NeftaPlugin._instance._info._appId);
+                json.put("nuid", NeftaPlugin._instance._state._nuid);
 
-                JSONArray ads = new JSONArray();
-                for (NAd ad : NeftaPlugin._instance._ads) {
-                    if (ad._placement == placement) {
-                        JSONObject adJson = new JSONObject();
-                        adJson.put("id", ad.hashCode());
-                        adJson.put("state", ad._state);
-                        String crid = "";
-                        if (ad._bid != null) {
-                            crid = ad._bid._creativeId;
+                for (Map.Entry<String, Placement> p : NeftaPlugin._instance._placements.entrySet()) {
+                    Placement placement = p.getValue();
+                    JSONObject placementJson = new JSONObject();
+                    placementJson.put("id", p.getKey());
+                    placementJson.put("type", placement._type);
+                    adUnits.put(placementJson);
+
+                    JSONArray ads = new JSONArray();
+                    for (NAd ad : NeftaPlugin._instance._ads) {
+                        if (ad._placement == placement) {
+                            JSONObject adJson = new JSONObject();
+                            adJson.put("id", ad.hashCode());
+                            adJson.put("state", ad._state);
+                            String crid = "";
+                            if (ad._bid != null) {
+                                crid = ad._bid._creativeId;
+                            }
+                            adJson.put("crid", crid);
+                            ads.put(adJson);
                         }
-                        adJson.put("crid", crid);
-                        ads.put(adJson);
                     }
+                    placementJson.put("ads", ads);
                 }
-                placementJson.put("ads", ads);
             }
 
             stateString = json.toString();
@@ -456,8 +507,39 @@ public class DebugServer {
 
         }
 
-        String message = "state|android|"+ NeftaPlugin._instance._info._bundleId +"|"+ _version +"|"+ _logLines.size() +"|"+ stateString;
+        String message = "state|android|"+ bundleId  +"|"+ _version +"|"+ _logLines.size() +"|"+ stateString;
         SendUdp(address, port, to, message);
+    }
+
+    private void ForwardInsights(int index, Insights insights) {
+        String message = "return|insights|"+ index + "|{";
+        boolean hasFields = false;
+        if (insights._churn != null) {
+            message += "\"churn\":{\"d1_probability\":"+ insights._churn._d1_probability + "}";
+            hasFields = true;
+        }
+        if (insights._banner != null) {
+            if (hasFields) {
+                message += ",";
+            }
+            message += "\"interstitial\":{\"ad_unit\":\""+ insights._banner._adUnit +"\",\"floor_price\":"+ insights._banner._floorPrice +"}";
+            hasFields = true;
+        }
+        if (insights._interstitial!= null) {
+            if (hasFields) {
+                message += ",";
+            }
+            message += "\"interstitial\":{\"ad_unit\":\""+ insights._interstitial._adUnit +"\",\"floor_price\":"+ insights._interstitial._floorPrice +"}";
+            hasFields = true;
+        }
+        if (insights._rewarded != null) {
+            if (hasFields) {
+                message += ",";
+            }
+            message += "\"interstitial\":{\"ad_unit\":\""+ insights._rewarded._adUnit +"\",\"floor_price\":"+ insights._rewarded._floorPrice +"}";
+        }
+        message += "}";
+        SendUdp(_broadcastAddress, _broadcastPort, "master", message);
     }
 
     private NeftaEvents.ProgressionStatus ToProgressionStatus(String name) {

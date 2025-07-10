@@ -1,8 +1,10 @@
 package com.nefta.direct;
 
+import com.nefta.sdk.Insights;
 import com.nefta.sdk.NAd;
 import com.nefta.sdk.NBanner;
 import com.nefta.sdk.NBannerListener;
+import com.nefta.sdk.NeftaPlugin;
 
 public class BannerController extends AdUnitController implements NBannerListener {
     private NBanner _banner;
@@ -18,6 +20,10 @@ public class BannerController extends AdUnitController implements NBannerListene
 
     @Override
     protected NAd CreateInstance() {
+        NeftaPlugin._instance.GetInsights(Insights.BANNER, (insights) -> {
+            _insights = insights;
+        }, 5);
+
         _banner = new NBanner(_placement._id, MainActivity.GetBannerPlaceholder());
         _banner._listener = this;
         return _banner;
