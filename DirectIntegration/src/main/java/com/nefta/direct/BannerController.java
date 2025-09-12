@@ -20,7 +20,7 @@ public class BannerController extends AdUnitController implements NBannerListene
 
     @Override
     protected NAd CreateInstance() {
-        NeftaPlugin._instance.GetInsights(Insights.BANNER, (insights) -> {
+        NeftaPlugin._instance.GetInsights(Insights.BANNER, null, (insights) -> {
             _insights = insights;
         }, 5);
 

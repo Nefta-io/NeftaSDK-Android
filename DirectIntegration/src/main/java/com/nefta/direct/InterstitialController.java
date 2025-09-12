@@ -13,7 +13,7 @@ public class InterstitialController extends AdUnitController implements NInterst
 
     @Override
     protected NAd CreateInstance() {
-        NeftaPlugin._instance.GetInsights(Insights.INTERSTITIAL, (insights) -> {
+        NeftaPlugin._instance.GetInsights(Insights.INTERSTITIAL, null, (insights) -> {
             _insights = insights;
         }, 5);
 

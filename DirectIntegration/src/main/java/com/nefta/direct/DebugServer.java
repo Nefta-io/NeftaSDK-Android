@@ -348,32 +348,31 @@ public class DebugServer {
                     }
                     case "add_external_mediation_request": {
                         String provider = segments[4];
-                        int type = Integer.parseInt(segments[5]);
-                        String recommendedAdUnitId = segments[6];
-                        double requestedFloor = Double.parseDouble(segments[7]);
-                        double calculatedFloor = Double.parseDouble(segments[8]);
-                        String adUnitId = segments[9];
-                        double revenue = Double.parseDouble(segments[10]);
-                        String precision = segments[11];
-                        int status = Integer.parseInt(segments[12]);
+                        String id = segments[5];
+                        String id2 = segments[6];
+                        double revenue = Double.parseDouble(segments[7]);
+                        String precision = segments[8];
+                        int status = Integer.parseInt(segments[9]);
                         String providerStatus = null;
-                        if (segments.length > 13) {
-                            providerStatus = segments[13];
+                        if (segments.length > 10) {
+                            providerStatus = segments[10];
                         }
                         String networkStatus = null;
-                        if (segments.length > 14) {
-                            networkStatus = segments[14];
+                        if (segments.length > 11) {
+                            networkStatus = segments[11];
                         }
-                        NeftaPlugin.OnExternalMediationRequest(provider, type, recommendedAdUnitId, requestedFloor, calculatedFloor, adUnitId, revenue, precision, status, providerStatus, networkStatus);
+                        NeftaPlugin.OnExternalMediationResponse(provider, id, id2, revenue, precision, status, providerStatus, networkStatus);
                         SendUdp(address, port, sourceName, "return|add_external_mediation_request");
                         break;
                     }
                     case "add_external_mediation_impression": {
-                        String path = segments[4];
-                        int adType = Integer.parseInt(segments[5]);
-                        double revenue = Double.parseDouble(segments[6]);
-                        String precision = segments[7];
-                        NeftaPlugin.OnExternalMediationImpression(path, null, adType, revenue, precision);
+                        boolean isClick = Boolean.parseBoolean(segments[4]);
+                        String provider = segments[5];
+                        String id = segments[6];
+                        String id2 = segments[7];
+                        double revenue = Double.parseDouble(segments[8]);
+                        String precision = segments[9];
+                        NeftaPlugin.OnExternalMediationImpression(isClick, provider, new JSONObject(), id, id2);
                         SendUdp(address, port, sourceName, "return|add_external_mediation_impression");
                         break;
                     }
@@ -381,7 +380,7 @@ public class DebugServer {
                         int insightFlags = Integer.parseInt(segments[4]);
                         int callbackIndex = Integer.parseInt(segments[5]);
 
-                        NeftaPlugin._instance.GetInsights(insightFlags, (insights) -> {
+                        NeftaPlugin._instance.GetInsights(insightFlags, null, (insights) -> {
                             ForwardInsights(callbackIndex, insights);
                         });
 

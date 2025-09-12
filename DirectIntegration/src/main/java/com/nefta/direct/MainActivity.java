@@ -20,6 +20,7 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.FragmentTransaction;
 
+import com.nefta.sdk.InitConfiguration;
 import com.nefta.sdk.Insights;
 import com.nefta.sdk.NeftaPlugin;
 import com.nefta.direct.databinding.ActivityMainBinding;
@@ -29,6 +30,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class MainActivity extends AppCompatActivity {
+    private final static String _tag = "NeftaPluginDI";
 
     private final static String preferences = "preferences";
     private final static String trackingKey = "tracking";
@@ -55,13 +57,14 @@ public class MainActivity extends AppCompatActivity {
         _debugServer = new DebugServer(this, getIntent());
 
         NeftaPlugin.EnableLogging(true);
+        NeftaPlugin.SetExtraParameter(NeftaPlugin.ExtParam_TestGroup, "split-direct");
         _plugin = NeftaPlugin.Init(this, "5643649824063488");
         _plugin.SetContentRating(NeftaPlugin.ContentRating_Teen);
         SetTracking();
 
         _plugin.OnReady = this::OnReady;
 
-        _plugin.GetInsights(Insights.CHURN | Insights.BANNER, this::OnInsights, 5);
+        _plugin.GetInsights(Insights.CHURN | Insights.BANNER, null, this::OnInsights, 5);
 
         _placementToControllers = new HashMap<>();
     }
@@ -75,12 +78,12 @@ public class MainActivity extends AppCompatActivity {
         super.onDestroy();
     }
 
-    private void OnReady(HashMap<String, Placement> placements) {
+    private void OnReady(InitConfiguration initConfig) {
         _placementToControllers.clear();
         ((LinearLayout)findViewById(R.id.placementContainer)).removeAllViews();
 
         FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
-        for (Map.Entry<String, Placement> p : placements.entrySet()) {
+        for (Map.Entry<String, Placement> p : initConfig._placements.entrySet()) {
             Placement placement = p.getValue();
             PlacementController placementController = new PlacementController();
             placementController.Init(placement, this);
@@ -91,12 +94,12 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void OnInsights(Insights insights) {
-        Log.i("DI", "OnInsights");
+        Log("OnInsights");
         if (insights._churn != null) {
-            Log.i("DI", "Insight churn d1: " + insights._churn._d1_probability);
+            Log("Insight churn d1: " + insights._churn._d1_probability);
         }
         if (insights._interstitial != null) {
-            Log.i("DI", "Insight interstitial floor: " + insights._interstitial._floorPrice);
+            Log("Insight interstitial floor: " + insights._interstitial._floorPrice);
         }
     }
 
@@ -143,5 +146,9 @@ public class MainActivity extends AppCompatActivity {
         _isTablet = diagonalInInches >= 6.5 && (getResources().getConfiguration().screenLayout & Configuration.SCREENLAYOUT_SIZE_MASK) >= Configuration.SCREENLAYOUT_SIZE_LARGE;
         _bannerPlaceholder.setVisibility(_isTablet ? View.GONE : View.VISIBLE);
         _leaderPlaceholder.setVisibility(_isTablet ? View.VISIBLE : View.GONE);
+    }
+
+    private void Log(String log) {
+        Log.i(_tag, log);
     }
 }

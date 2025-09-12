@@ -133,21 +133,7 @@ public class AdUnitController extends Fragment {
     public void OnLoad(NAd ad, int width, int height) {
         SetText("OnLoad success w:"+ width+ " h:"+ height);
 
-        String recommendedAdUnitId = null;
-        double calculatedFloor = 0.0;
-        if (_insights != null) {
-            if (ad._placement._type == Placement.Types.Banner) {
-                recommendedAdUnitId = _insights._banner._adUnit;
-                calculatedFloor = _insights._banner._floorPrice;
-            } else if (ad._placement._type == Placement.Types.Interstitial) {
-                recommendedAdUnitId = _insights._interstitial._adUnit;
-                calculatedFloor = _insights._interstitial._floorPrice;
-            } else if (ad._placement._type == Placement.Types.Rewarded) {
-                recommendedAdUnitId = _insights._rewarded._adUnit;
-                calculatedFloor = _insights._rewarded._floorPrice;
-            }
-        }
-        NeftaPlugin.OnExternalMediationRequest("internal-test", ad._type._code, recommendedAdUnitId, 0.0, calculatedFloor, ad._placement._id, 0.2, "prec", 1, null, null);
+        NeftaPlugin.OnExternalMediationResponse("internal-test", ad._placement._id, null, 0.2,  "prec", 1, null, null);
     }
 
     public void OnShowFail(NAd ad, NError error) {
@@ -158,7 +144,7 @@ public class AdUnitController extends Fragment {
     public void OnShow(NAd ad) {
         SetText("OnShow");
 
-        NeftaPlugin.OnExternalMediationImpression("internal-test", new JSONObject(), ad._type._code, 0.2, "pre");
+        NeftaPlugin.OnExternalMediationImpression(false, "internal-test", new JSONObject(), ad._placement._id, null);
     }
 
     public void OnClick(NAd ad) {
@@ -201,7 +187,7 @@ public class AdUnitController extends Fragment {
         String name = "example event";
         long randomValue = random.nextLong(0, 101);
         if (_placement._type == Placement.Types.Banner) {
-            NeftaPlugin._instance.GetInsights(Insights.BANNER, (Insights insights) -> {
+            NeftaPlugin._instance.GetInsights(Insights.BANNER, null, (Insights insights) -> {
                 double bidFloor = 0;
                 if (insights._banner != null) {
                     bidFloor = insights._banner._floorPrice;
@@ -214,7 +200,7 @@ public class AdUnitController extends Fragment {
             NeftaEvents.ProgressionSource progressionSource = NeftaEvents.ProgressionSource.FromInt(random.nextInt(0, 7));
             NeftaPlugin.Events.AddProgressionEvent(progressionStatus, progressionType, progressionSource, name, randomValue);
         } else if (_placement._type == Placement.Types.Interstitial) {
-            NeftaPlugin._instance.GetInsights(Insights.INTERSTITIAL, (Insights insights) -> {
+            NeftaPlugin._instance.GetInsights(Insights.INTERSTITIAL, null, (Insights insights) -> {
                 double bidFloor = 0;
                 if (insights._interstitial != null) {
                     bidFloor = insights._interstitial._floorPrice;
@@ -223,10 +209,10 @@ public class AdUnitController extends Fragment {
             }, 5);
 
             NeftaEvents.ResourceCategory resourceCategory = NeftaEvents.ResourceCategory.FromInt(random.nextInt(0, 9));
-            NeftaEvents.ReceiveMethod receiveMethod = NeftaEvents.ReceiveMethod.FromInt(random.nextInt(0, 8));
+            NeftaEvents.ReceiveMethod receiveMethod = NeftaEvents.ReceiveMethod.FromInt(random.nextInt(0, 7));
             NeftaPlugin.Events.AddReceiveEvent(resourceCategory, receiveMethod, name, randomValue);
         } else {
-            NeftaPlugin._instance.GetInsights(Insights.REWARDED, (Insights insights) -> {
+            NeftaPlugin._instance.GetInsights(Insights.REWARDED, null, (Insights insights) -> {
                 double bidFloor = 0;
                 if (insights._rewarded != null) {
                     bidFloor = insights._rewarded._floorPrice;
@@ -235,7 +221,7 @@ public class AdUnitController extends Fragment {
             }, 5);
 
             NeftaEvents.ResourceCategory resourceCategory = NeftaEvents.ResourceCategory.FromInt(random.nextInt(0, 9));
-            NeftaEvents.SpendMethod spendMethod = NeftaEvents.SpendMethod.FromInt(random.nextInt(0, 8));
+            NeftaEvents.SpendMethod spendMethod = NeftaEvents.SpendMethod.FromInt(random.nextInt(0, 7));
             NeftaPlugin.Events.AddSpendEvent(resourceCategory, spendMethod, name, randomValue);
         }
     }

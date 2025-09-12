@@ -14,7 +14,7 @@ public class RewardedController extends AdUnitController implements NRewardedLis
 
     @Override
     protected NAd CreateInstance() {
-        NeftaPlugin._instance.GetInsights(Insights.REWARDED, (insights) -> {
+        NeftaPlugin._instance.GetInsights(Insights.REWARDED, null, (insights) -> {
             _insights = insights;
         }, 5);
 
