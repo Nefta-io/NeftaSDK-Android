@@ -64,8 +64,6 @@ public class MainActivity extends AppCompatActivity {
 
         _plugin.OnReady = this::OnReady;
 
-        _plugin.GetInsights(Insights.CHURN | Insights.BANNER, null, this::OnInsights, 5);
-
         _placementToControllers = new HashMap<>();
     }
 
