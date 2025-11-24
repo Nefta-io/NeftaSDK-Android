@@ -20,6 +20,7 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.FragmentTransaction;
 
+import com.nefta.sdk.AdInsight;
 import com.nefta.sdk.InitConfiguration;
 import com.nefta.sdk.Insights;
 import com.nefta.sdk.NeftaPlugin;
@@ -35,7 +36,6 @@ public class MainActivity extends AppCompatActivity {
     private final static String preferences = "preferences";
     private final static String trackingKey = "tracking";
     private NeftaPlugin _plugin;
-    private DebugServer _debugServer;
     private static boolean _isTablet;
     private static FrameLayout _bannerPlaceholder;
     private static RelativeLayout _leaderPlaceholder;
@@ -54,7 +54,7 @@ public class MainActivity extends AppCompatActivity {
         setContentView(view);
         AdjustForTablet(view);
 
-        _debugServer = new DebugServer(this, getIntent());
+        DebugServer.Init(this, getIntent());
 
         NeftaPlugin.EnableLogging(true);
         NeftaPlugin.SetExtraParameter(NeftaPlugin.ExtParam_TestGroup, "split-direct");
@@ -71,7 +71,6 @@ public class MainActivity extends AppCompatActivity {
     public void onDestroy() {
         _bannerPlaceholder = null;
         _leaderPlaceholder = null;
-        _debugServer.Destroy();
 
         super.onDestroy();
     }
@@ -89,16 +88,6 @@ public class MainActivity extends AppCompatActivity {
             _placementToControllers.put(placement, placementController);
         }
         ft.commit();
-    }
-
-    private void OnInsights(Insights insights) {
-        Log("OnInsights");
-        if (insights._churn != null) {
-            Log("Insight churn d1: " + insights._churn._d1_probability);
-        }
-        if (insights._interstitial != null) {
-            Log("Insight interstitial floor: " + insights._interstitial._floorPrice);
-        }
     }
 
     private void SetTracking() {

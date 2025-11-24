@@ -30,8 +30,6 @@ import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.nio.charset.StandardCharsets;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Enumeration;
@@ -44,20 +42,41 @@ public class DebugServer {
     private final String TAG = "DS";
     private final int _broadcastPort = 12010;
 
+    private class LogEntry {
+        public final long _time;
+        public final String _line;
+
+        public LogEntry(String line) {
+            _time = System.currentTimeMillis();
+            _line = line;
+        }
+    }
+
     private Activity _activity;
     private String _name;
+    private String _bundleId;
     private String _version;
     private final Handler _mainHandler;
     private final HandlerThread _backgroundThread;
     private final Handler _backgroundHandler;
     private Thread _broadcastThread;
     private InetAddress _broadcastAddress;
+    private int _localPort;
     private DatagramSocket _broadcastSocket;
     private Runnable _broadcastRunnable;
-    private final List<String> _logLines;
+    private final List<LogEntry> _logLines;
     private ExecutorService _executor;
+    private static DebugServer _referenceHolder;
 
-    public DebugServer(Activity activity, Intent intent) {
+    public static void Init(Activity activity, Intent intent) {
+        if (_referenceHolder == null) {
+            _referenceHolder = new DebugServer(activity, intent);
+        }
+    }
+
+    private DebugServer(Activity activity, Intent intent) {
+        _referenceHolder = this;
+
         _activity = activity;
         _mainHandler = new Handler(Looper.getMainLooper());
 
@@ -66,6 +85,7 @@ public class DebugServer {
         _backgroundHandler = new Handler(_backgroundThread.getLooper());
 
         _name = Build.MANUFACTURER + " " + Build.MODEL;
+        _bundleId = activity.getPackageName();
 
         try {
             PackageManager pm = _activity.getPackageManager();
@@ -76,21 +96,19 @@ public class DebugServer {
 
         }
 
-        String override = null;
         if (intent != null && intent.getExtras() != null) {
-            override = intent.getStringExtra("override");
+            String override = intent.getStringExtra("override");
             if (override != null && override.length() > 2) {
-                NeftaPlugin.SetOverride(override + "/sdk/init");
+                NeftaPlugin.SetOverride(override);
             }
         }
 
         _logLines = new ArrayList<>();
 
+        NeftaPlugin._instance = null;
         NeftaPlugin.SetDebugTime(0);
         NeftaPlugin.OnLog = (String log) -> {
-            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS");
-            LocalDateTime now = LocalDateTime.now();
-            _logLines.add(now.format(formatter) +" "+ log);
+            _logLines.add(new LogEntry(log));
         };
 
         startBroadcastServer();
@@ -99,6 +117,7 @@ public class DebugServer {
     public void Destroy() {
         StopBroadcastServer();
         _activity = null;
+        _referenceHolder = null;
     }
 
     private void startBroadcastServer() {
@@ -115,7 +134,8 @@ public class DebugServer {
             _broadcastSocket.setBroadcast(true);
             String ip = GetBroadcastIp();
             _broadcastAddress = InetAddress.getByName(ip);
-            Log.i(TAG, "Broadcast server started: " + ip +":"+ _broadcastSocket.getLocalPort());
+            _localPort = _broadcastSocket.getLocalPort();
+            Log.i(TAG, "Broadcast server started: " + ip +":"+ _localPort);
             _backgroundHandler.post(_broadcastRunnable);
         } catch (Exception e) {
             Log.i(TAG, "Exc: " + e.getMessage());
@@ -152,9 +172,13 @@ public class DebugServer {
                 int aIdH;
                 switch (control) {
                     case "get_logs":
-                        int line = Integer.parseInt(segments[4]);
-                        for (int i = line; i < _logLines.size(); i++) {
-                            SendUdp(address, port, sourceName, "log|"+ i +"|"+ _logLines.get(i));
+                        long lastLogTime = Long.parseLong(segments[4]);
+                        for (int i = 0; i < _logLines.size(); i++) {
+                            LogEntry entry = _logLines.get(i);
+                            if (lastLogTime > entry._time) {
+                                continue;
+                            }
+                            SendUdp(address, port, sourceName, "log|"+ entry._time +"|"+ entry._line);
                         }
                         break;
                     case "set_time_offset":
@@ -427,6 +451,8 @@ public class DebugServer {
                             Log.i(TAG, "Error writing to '"+ f.getAbsolutePath() + ": "+ exception.getMessage());
                         }
                         break;
+                    case "crash":
+                        throw new RuntimeException("Simulated crash");
                     default:
                         Log.i(TAG, "Unrecognized command: " + control + " m:" + message);
                         break;
@@ -463,7 +489,6 @@ public class DebugServer {
     }
 
     private void SendState(InetAddress address, int port, String to) {
-        String bundleId = null;
         String stateString = null;
         try {
             JSONObject json = new JSONObject();
@@ -472,7 +497,6 @@ public class DebugServer {
             json.put("ad_units", adUnits);
 
             if (NeftaPlugin._instance != null) {
-                bundleId = NeftaPlugin._instance._info._bundleId;
                 json.put("app_id", NeftaPlugin._instance._info._appId);
                 json.put("nuid", NeftaPlugin._instance._state._nuid);
 
@@ -506,7 +530,11 @@ public class DebugServer {
 
         }
 
-        String message = "state|android|"+ bundleId  +"|"+ _version +"|"+ _logLines.size() +"|"+ stateString;
+        long lastLogTime = 0;
+        if (!_logLines.isEmpty()) {
+            lastLogTime = _logLines.get(_logLines.size() -1)._time;
+        }
+        String message = "state|android|"+ _localPort +"|"+ _bundleId  +"|"+ _version +"|"+ lastLogTime +"|"+ stateString;
         SendUdp(address, port, to, message);
     }
 
