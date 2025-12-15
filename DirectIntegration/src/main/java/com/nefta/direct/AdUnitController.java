@@ -133,7 +133,7 @@ public class AdUnitController extends Fragment {
     public void OnLoad(NAd ad, int width, int height) {
         SetText("OnLoad success w:"+ width+ " h:"+ height);
 
-        NeftaPlugin.OnExternalMediationResponse("internal-test", ad._placement._id, null, 0.2,  "prec", 1, null, null);
+        NeftaPlugin.OnExternalMediationResponse("internal-test", ad._placement._id, null, 0.2,  "prec", 1, null, null, null);
     }
 
     public void OnShowFail(NAd ad, NError error) {

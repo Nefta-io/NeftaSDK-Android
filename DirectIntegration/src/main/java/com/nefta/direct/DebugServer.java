@@ -385,7 +385,7 @@ public class DebugServer {
                         if (segments.length > 11) {
                             networkStatus = segments[11];
                         }
-                        NeftaPlugin.OnExternalMediationResponse(provider, id, id2, revenue, precision, status, providerStatus, networkStatus);
+                        NeftaPlugin.OnExternalMediationResponse(provider, id, id2, revenue, precision, status, providerStatus, networkStatus, null);
                         SendUdp(address, port, sourceName, "return|add_external_mediation_request");
                         break;
                     }

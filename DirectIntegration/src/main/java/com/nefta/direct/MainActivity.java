@@ -80,13 +80,13 @@ public class MainActivity extends AppCompatActivity {
         ((LinearLayout)findViewById(R.id.placementContainer)).removeAllViews();
 
         FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
-        for (Map.Entry<String, Placement> p : initConfig._placements.entrySet()) {
+        /*for (Map.Entry<String, Placement> p : initConfig._placements.entrySet()) {
             Placement placement = p.getValue();
             PlacementController placementController = new PlacementController();
             placementController.Init(placement, this);
             ft.add(R.id.placementContainer, placementController);
             _placementToControllers.put(placement, placementController);
-        }
+        }*/
         ft.commit();
     }
 
