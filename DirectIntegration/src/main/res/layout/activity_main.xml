@@ -9,26 +9,6 @@
     android:fitsSystemWindows="true"
     tools:context=".MainActivity">
 
-    <FrameLayout
-        android:id="@+id/bannerView"
-        android:layout_width="match_parent"
-        android:layout_height="52dp"
-        android:layout_gravity="center_horizontal"
-        android:background="#000000"
-        android:translationY="-1dp"
-        android:visibility="gone">
-
-    </FrameLayout>
-
-
-    <RelativeLayout
-        android:id="@+id/leaderView"
-        android:layout_width="match_parent"
-        android:layout_height="90dp"
-        android:background="#0033FF"
-        android:visibility="visible">
-
-    </RelativeLayout>
 
     <TextView
         android:id="@+id/mainTitle"
@@ -40,19 +20,5 @@
         android:textColor="#000000"
         android:textSize="30sp"
         android:translationY="90dp" />
-
-    <ScrollView
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_marginTop="180dp">
-
-        <LinearLayout
-            android:id="@+id/placementContainer"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical">
-
-        </LinearLayout>
-    </ScrollView>
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
