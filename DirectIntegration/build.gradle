@@ -8,8 +8,8 @@ android {
         applicationId "com.nefta.direct"
         minSdk 26
         targetSdk 33
-        versionCode 323
-        versionName "4.6.0.323"
+        versionCode 324
+        versionName "4.6.1.324"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
     buildTypes {
