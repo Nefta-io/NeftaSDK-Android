@@ -25,7 +25,7 @@ public class MainActivity extends AppCompatActivity {
         NeftaPlugin.EnableLogging(true);
         NeftaPlugin.SetExtraParameter(NeftaPlugin.ExtParam_TestGroup, "split-direct");
         NeftaPlugin.NativeInit(this, "5643649824063488", null, (InitConfiguration initConfig) -> {
-            Log.i(_tag, "OnReady: "+ initConfig._skipOptimization + " for: " + initConfig._nuid);
+            Log.i(_tag, "Nefta initialized, nuid: " + initConfig._nuid);
         }, "direct", "/");
     }
 }
