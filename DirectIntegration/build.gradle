@@ -9,7 +9,7 @@ android {
         minSdk 26
         targetSdk 33
         versionCode 328
-        versionName "4.6.2.328"
+        versionName "4.6.4.328"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
     buildTypes {
