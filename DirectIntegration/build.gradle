@@ -2,21 +2,21 @@ plugins {
     id 'com.android.application'
 }
 android {
-    namespace 'com.nefta.direct'
+    namespace = 'com.nefta.direct'
     compileSdk 34
     defaultConfig {
         applicationId "com.nefta.direct"
         minSdk 26
         targetSdk 33
         versionCode 328
-        versionName "4.6.4.328"
+        versionName "4.6.6.328"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
     buildTypes {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
-            signingConfig signingConfigs.debug
+            signingConfig = signingConfigs.debug
         }
     }
     compileOptions {
@@ -24,7 +24,7 @@ android {
         targetCompatibility JavaVersion.VERSION_1_8
     }
     buildFeatures {
-        viewBinding true
+        viewBinding = true
     }
 }
 dependencies {
