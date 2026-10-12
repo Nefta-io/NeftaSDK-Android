@@ -23,7 +23,7 @@ public class MainActivity extends AppCompatActivity {
         DebugServer.Init(this, getIntent());
 
         NeftaPlugin.EnableLogging(true);
-        NeftaPlugin.NativeInit(this, "5643649824063488", null, (InitConfiguration initConfig) -> {
+        NeftaPlugin.NativeInit(this, "5643649824063488", null, NeftaPlugin.OptimizationType.Optimized, (InitConfiguration initConfig) -> {
             Log.i(_tag, "Nefta initialized, nuid: " + initConfig._nuid);
         }, "direct", "/");
     }
